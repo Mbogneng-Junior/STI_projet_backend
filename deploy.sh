@@ -7,7 +7,7 @@ DROPLET_IP="104.236.244.230"
 # Utilisateur SSH (généralement root sur DigitalOcean)
 SSH_USER="root"
 # Chemin vers la racine de ton projet sur le Droplet
-REMOTE_PROJECT_PATH="/root/STI_projet_backend"
+REMOTE_PROJECT_PATH="/STI_projet_backend"
 # Nom de la branche Git à déployer
 GIT_BRANCH="master" # Ou "main" si c'est ta branche principale
 # Fichier docker-compose pour la production
@@ -33,25 +33,7 @@ ssh ${SSH_USER}@${DROPLET_IP} << EOF
 
     echo -e "\n--- 2.2. Récupération des dernières modifications depuis Git ---"
     # Ceci écrase toute modification locale sur le serveur et synchronise avec le dépôt distant
-    git fetch origin
-    git reset --hard origin/${GIT_BRANCH}
-    git pull origin ${GIT_BRANCH}
-
-    echo -e "\n--- 2.3. Arrêt et suppression des anciens conteneurs Docker ---"
-    # Suppression des volumes anonymes pour nettoyer l'ancien état si nécessaire (-v)
-    docker compose -f ${DOCKER_COMPOSE_FILE} down -v || true # '|| true' car 'down' peut échouer si rien ne tourne
-
-    echo -e "\n--- 2.4. Reconstruction et démarrage des conteneurs Docker (mode production) ---"
-    # --build pour s'assurer que les dernières modifications du code et des requirements.txt sont prises en compte
-    # -d pour lancer en arrière-plan
-    docker compose -f ${DOCKER_COMPOSE_FILE} up --build -d
-
-    echo -e "\n--- 2.5. Application des migrations de base de données ---"
-    docker compose -f ${DOCKER_COMPOSE_FILE} exec web python manage.py migrate --noinput
-
-    echo -e "\n--- 2.6. Collecte des fichiers statiques ---"
-    # --noinput pour éviter les questions de confirmation
-    docker compose -f ${DOCKER_COMPOSE_FILE} exec web python manage.py collectstatic --noinput
+    git pull
 
     echo -e "\n--- Déploiement distant terminé ! ---"
     echo "Votre application devrait être accessible via http://${DROPLET_IP}/api/docs/"
