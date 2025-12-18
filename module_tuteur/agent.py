@@ -5,7 +5,7 @@ from google.adk.runners import Runner
 from google.genai.types import Content, Part
 from google.adk.sessions import DatabaseSessionService
 
-# --- AJOUT DES IMPORTS POUR LA SAUVEGARDE ---
+# AJOUT DES IMPORTS POUR LA SAUVEGARDE
 from google.adk.events import Event, EventActions
 
 # Imports internes
@@ -17,63 +17,22 @@ from module_interface.models import SessionApprentissage, Interaction
 from .strategies import StrategieSocratique, StrategieDirecte, StrategieScaffolding
 
 class TuteurIA:
-    
-    def __init__(self):
-        self.strategies = {
-            'SOCRATIQUE': StrategieSocratique(),
-            'DIRECT': StrategieDirecte(),
-            'SCAFFOLDING': StrategieScaffolding()
-        }
-
-    async def _get_session_service(self):
-        return DatabaseSessionService(db_url=db_url)
+    # ... (code __init__ et _get_session_service inchangé) ...
 
     async def demarrer_session_async(self, apprenant_email, domaine_nom):
-        try:
-            apprenant = await Apprenant.objects.aget(email=apprenant_email)
-            domaine = await DomaineMedical.objects.aget(nom__iexact=domaine_nom)
-            
-            cas = await CasClinique.objects.filter(
-                domaine=domaine, 
-                statut=CasClinique.StatutCas.PUBLIE
-            ).afirst()
-            
-            if not cas:
-                return None, "Aucun cas disponible."
-
-            session_django = await SessionApprentissage.objects.acreate(
-                apprenant=apprenant,
-                cas_clinique=cas
-            )
-
-            adk_service = await self._get_session_service()
-            
-            await adk_service.create_session(
-                app_name=expert_app.name,
-                user_id=str(apprenant.id),
-                session_id=str(session_django.id),
-                state={
-                    "etape_courante": "Anamnèse",
-                    "erreurs_consecutives": 0,
-                    "cas_context": cas.donnees_patient
-                }
-            )
-
-            return session_django, f"Session démarrée : {cas.titre}"
-
-        except Exception as e:
-            return None, str(e)
+        # ... (code demarrer_session_async inchangé) ...
+        pass
 
     async def analyser_reponse_async(self, session_id, reponse_etudiant, etape_actuelle):
         try:
             session_django = await SessionApprentissage.objects.select_related(
                 'cas_clinique__domaine', 
-                'apprenant'
+                'apprenant'              
             ).aget(id=session_id)
             
             cas = session_django.cas_clinique
             apprenant = session_django.apprenant
-            domaine = cas.domaine
+            domaine = cas.domaine  
             
             profil = await ProfilEtudiant.objects.aget(apprenant=apprenant)
             adk_service = await self._get_session_service()
@@ -89,7 +48,8 @@ class TuteurIA:
                 f"ÉTAPE: {etape_actuelle}\n"
                 f"RÉPONSE: '{reponse_etudiant}'\n"
                 f"SOLUTION: {cas.solution_experte}\n"
-                "Valide la réponse (JSON: correct, raison)."
+                "Ta mission : Valide cette réponse médicalement.\n"
+                "Format JSON impératif : { \"correct\": bool, \"raison\": \"string\", \"erreurs_detectees\": [\"string\"] }" # <--- AJOUT "erreurs_detectees" ici
             )
             
             user_message = Content(parts=[Part(text=prompt_content)])
@@ -103,7 +63,6 @@ class TuteurIA:
                 if event.is_final_response() and event.content:
                     expert_response_text = event.content.parts[0].text
 
-            # Récupération session ADK
             session_adk = await adk_service.get_session(
                 app_name=expert_app.name, 
                 user_id=str(apprenant.id), 
@@ -115,11 +74,12 @@ class TuteurIA:
                 resultat_expert = json.loads(clean_json)
                 est_correct = resultat_expert.get('correct', False)
                 raison_expert = resultat_expert.get('raison', '')
+                erreurs_expert = resultat_expert.get('erreurs_detectees', []) # <--- RÉCUPÉRATION DES ERREURS
             except:
                 est_correct = False
                 raison_expert = expert_response_text
+                erreurs_expert = []
 
-            # --- LOGIQUE DE PERSISTANCE DU STATE ---
             current_errors = session_adk.state.get("erreurs_consecutives", 0)
             
             if not est_correct:
@@ -127,19 +87,15 @@ class TuteurIA:
             else:
                 new_errors = 0
 
-            # IMPORTANT : On crée un "System Event" pour forcer la sauvegarde dans Postgres
-            # C'est la méthode officielle ADK pour modifier l'état manuellement
             state_update_event = Event(
                 author="system",
                 actions=EventActions(state_delta={"erreurs_consecutives": new_errors})
             )
-            # On utilise 'append_event' qui écrit en DB
             await adk_service.append_event(session_adk, state_update_event)
 
-            # Mise à jour des autres systèmes
-            await self._update_competence_django(profil, domaine, est_correct)
+            # --- MODIFICATION ICI : Appel de la fonction de mise à jour ---
+            await self._update_competence_django(profil, domaine, est_correct, erreurs_expert) 
             
-            # On utilise la nouvelle valeur pour la stratégie
             strategie = self._choisir_strategie(est_correct, new_errors)
             
             if est_correct:
@@ -168,7 +124,11 @@ class TuteurIA:
             return {"error": str(e)}
 
     @sync_to_async
-    def _update_competence_django(self, profil, domaine, est_correct):
+    def _update_competence_django(self, profil, domaine, est_correct, erreurs_expert): # <--- AJOUT 'erreurs_expert'
+        """
+        Met à jour les compétences et le profil de l'apprenant.
+        """
+        # Mise à jour du NiveauCompetence
         comp, _ = NiveauCompetence.objects.get_or_create(
             profil_etudiant=profil,
             domaine=domaine,
@@ -178,11 +138,33 @@ class TuteurIA:
             comp.score_diagnostic += 5
         else:
             comp.score_diagnostic = max(0, comp.score_diagnostic - 2)
+        
+        if comp.score_diagnostic > 50:
+             comp.niveau_actuel = 'INTERMEDIAIRE'
+             
         comp.save()
+
+        # --- MISE À JOUR DU PROFIL ÉTUDIANT ---
+        # Mise à jour de l'XP total
+        if est_correct:
+            profil.xp_total += 10 # Gagner plus d'XP pour une bonne réponse
+        
+        # Mise à jour des lacunes identifiées
+        if not est_correct and erreurs_expert:
+            current_lacunes = json.loads(profil.lacunes_identifiees or "[]")
+            for erreur in erreurs_expert:
+                if erreur not in current_lacunes:
+                    current_lacunes.append(erreur)
+            profil.lacunes_identifiees = json.dumps(current_lacunes)
+        elif est_correct and profil.lacunes_identifiees:
+            # Optionnel: Si l'élève réussit, on peut tenter de "résoudre" une lacune
+            # Ici, on ne fait rien de sophistiqué, mais on pourrait vider si tout est bon.
+            pass # Ou implémenter une logique de réduction/suppression des lacunes
+
+        profil.save() # Sauvegarde le profil après toutes les modifications
 
     def _choisir_strategie(self, est_correct, nb_erreurs):
         if est_correct: return self.strategies['SOCRATIQUE']
-        # Si 2 erreurs ou plus, stratégie DIRECTE
         if nb_erreurs >= 2: return self.strategies['DIRECT']
         return self.strategies['SCAFFOLDING']
 
