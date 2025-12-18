@@ -1,29 +1,33 @@
 import json
 from google.adk.tools import FunctionTool
+from google.adk.tools import ToolContext # NOUVEL IMPORT
+from asgiref.sync import sync_to_async # NOUVEL IMPORT
 
-def search_similar_cases_fn(symptoms: str) -> str:
+# Importation différée de models à l'intérieur de la fonction
+# from module_expert.models import CasClinique, DomaineMedical # Retire cet import global
+
+async def search_similar_cases_fn(symptoms: str, tool_context: ToolContext) -> str:
     """
     Recherche des cas cliniques similaires (règles de production) dans la base de connaissances
     pour le domaine du Paludisme, basés sur les symptômes fournis.
     
     Args:
         symptoms: Une description textuelle des symptômes observés.
+        tool_context: Le contexte de l'outil fourni par l'ADK.
         
     Returns:
         Une chaîne JSON contenant les cas similaires trouvés (Diagnostic, Traitement, Explication).
     """
-    # Importation différée pour éviter les problèmes de chargement Django
+    # Importation locale pour garantir que Django est configuré au moment de l'appel de la fonction.
     from module_expert.models import CasClinique, DomaineMedical
     
     try:
-        # On cible le domaine Paludisme
-        # Note: Dans un système réel, on pourrait rendre ce nom dynamique ou configurable
         domaine_nom = "Paludisme" 
         
-        cas_similaires = CasClinique.objects.filter(
+        cas_similaires = await sync_to_async(CasClinique.objects.filter)(
             domaine__nom__iexact=domaine_nom,
             statut=CasClinique.StatutCas.PUBLIE
-        )[:3] # On limite à 3 cas pour ne pas surcharger le contexte
+        )[:3]
         
         results = []
         for cas in cas_similaires:
@@ -42,4 +46,4 @@ def search_similar_cases_fn(symptoms: str) -> str:
     except Exception as e:
         return f"Erreur lors de la recherche dans la base de connaissances: {str(e)}"
 
-search_similar_cases = FunctionTool(func=search_similar_cases_fn)
+search_similar_cases = FunctionTool(func=search_similar_cases_fn, is_async=True)

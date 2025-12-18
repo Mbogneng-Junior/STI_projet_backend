@@ -1,23 +1,30 @@
 import json
 from google.adk.tools import FunctionTool
+from google.adk.tools import ToolContext # NOUVEL IMPORT
+from asgiref.sync import sync_to_async # NOUVEL IMPORT
 
-def search_pedia_cases_fn(symptoms: str) -> str:
+# Importation différée de models à l'intérieur de la fonction
+# from module_expert.models import CasClinique # Retire cet import global
+
+async def search_pedia_cases_fn(symptoms: str, tool_context: ToolContext) -> str:
     """
     Recherche des cas cliniques similaires dans la base de connaissances
     pour le domaine de la Pédiatrie.
     
     Args:
         symptoms: Une description textuelle des symptômes observés.
+        tool_context: Le contexte de l'outil fourni par l'ADK.
         
     Returns:
         Une chaîne JSON contenant les cas similaires trouvés.
     """
+    # Importation locale pour garantir que Django est configuré au moment de l'appel de la fonction.
     from module_expert.models import CasClinique
     
     try:
         domaine_nom = "Pédiatrie" 
         
-        cas_similaires = CasClinique.objects.filter(
+        cas_similaires = await sync_to_async(CasClinique.objects.filter)(
             domaine__nom__iexact=domaine_nom,
             statut=CasClinique.StatutCas.PUBLIE
         )[:3]
@@ -37,6 +44,6 @@ def search_pedia_cases_fn(symptoms: str) -> str:
         return json.dumps(results, ensure_ascii=False, indent=2)
 
     except Exception as e:
-        return f"Erreur recherche Pédiatrie: {str(e)}"
+        return f"Erreur lors de la recherche en Pédiatrie: {str(e)}"
 
-search_pedia_cases = FunctionTool(func=search_pedia_cases_fn)
+search_pedia_cases = FunctionTool(func=search_pedia_cases_fn, is_async=True)
