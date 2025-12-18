@@ -1,0 +1,8 @@
+[
+  {
+    "rule_id": "pedia_rule_001",
+    "symptoms": ["fièvre > 39°C", "toux", "nez qui coule", "yeux rouges"],
+    "diagnosis": "Rougeole",
+    "treatment": "Repos, Hydratation, Antipyrétiques, Vitamine A"
+  }
+]

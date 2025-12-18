@@ -1,0 +1,8 @@
+[
+  {
+    "rule_id": "derma_rule_001",
+    "symptoms": ["plaques rouges", "démangeaisons intenses", "sécheresse cutanée"],
+    "diagnosis": "Eczéma atopique",
+    "treatment": "Crèmes hydratantes, Corticoïdes locaux"
+  }
+]

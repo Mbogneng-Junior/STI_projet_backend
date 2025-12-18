@@ -1,0 +1,1 @@
+from .agent import dermatologie_expert

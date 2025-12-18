@@ -1,0 +1,8 @@
+[
+  {
+    "rule_id": "cardio_rule_001",
+    "symptoms": ["douleur thoracique", "irradiation bras gauche", "sueurs froides"],
+    "diagnosis": "Infarctus du myocarde",
+    "treatment": "Aspirine, Appel urgence, Thrombolyse"
+  }
+]

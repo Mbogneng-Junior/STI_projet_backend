@@ -1,0 +1,8 @@
+[
+  {
+    "rule_id": "example_rule_001",
+    "symptoms": ["fièvre", "frissons", "maux de tête"],
+    "diagnosis": "Paludisme simple",
+    "treatment": "Artemether-Lumefantrine"
+  }
+]
