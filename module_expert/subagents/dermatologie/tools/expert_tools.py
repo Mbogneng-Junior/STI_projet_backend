@@ -46,4 +46,4 @@ async def search_derma_cases_fn(symptoms: str, tool_context: ToolContext) -> str
     except Exception as e:
         return f"Erreur lors de la recherche en Dermatologie: {str(e)}"
 
-search_derma_cases = FunctionTool(func=search_derma_cases_fn, is_async=True)
+search_derma_cases = FunctionTool(func=search_derma_cases_fn)

@@ -46,4 +46,4 @@ async def search_similar_cases_fn(symptoms: str, tool_context: ToolContext) -> s
     except Exception as e:
         return f"Erreur lors de la recherche dans la base de connaissances: {str(e)}"
 
-search_similar_cases = FunctionTool(func=search_similar_cases_fn, is_async=True)
+search_similar_cases = FunctionTool(func=search_similar_cases_fn)

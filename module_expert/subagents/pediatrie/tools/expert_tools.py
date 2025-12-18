@@ -46,4 +46,4 @@ async def search_pedia_cases_fn(symptoms: str, tool_context: ToolContext) -> str
     except Exception as e:
         return f"Erreur lors de la recherche en Pédiatrie: {str(e)}"
 
-search_pedia_cases = FunctionTool(func=search_pedia_cases_fn, is_async=True)
+search_pedia_cases = FunctionTool(func=search_pedia_cases_fn)

@@ -49,4 +49,4 @@ async def search_cardio_cases_fn(symptoms: str, tool_context: ToolContext) -> st
         return f"Erreur lors de la recherche en Cardiologie: {str(e)}"
 
 # Le FunctionTool doit être marqué comme asynchrone (is_async=True)
-search_cardio_cases = FunctionTool(func=search_cardio_cases_fn, is_async=True)
+search_cardio_cases = FunctionTool(func=search_cardio_cases_fn)
