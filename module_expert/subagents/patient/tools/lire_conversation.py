@@ -1,0 +1,6 @@
+
+
+
+def lire_conversation():
+
+    

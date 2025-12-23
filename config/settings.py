@@ -44,6 +44,7 @@ INSTALLED_APPS = [
     'module_apprenant',
     'module_interface',
     'module_tuteur',
+    'corsheaders',  # Add CORS headers to allow requests from all origins
 ]
 
 MIDDLEWARE = [
@@ -54,6 +55,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Add CORS middleware
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -152,3 +154,6 @@ SPECTACULAR_SETTINGS = {
         'NiveauDifficulteEnum': 'module_expert.models.CasClinique.NiveauDifficulté',
     },
 }
+
+# Autoriser les requêtes de n'importe quelle origine
+CORS_ALLOW_ALL_ORIGINS = True

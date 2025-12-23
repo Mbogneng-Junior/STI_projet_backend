@@ -1,6 +1,7 @@
 Django>=4.2,<5.0
 psycopg2-binary
 djangorestframework
+django-cors-headers
 drf-spectacular
 gunicorn
 sqlalchemy
