@@ -6,7 +6,7 @@ from asgiref.sync import sync_to_async # NOUVEL IMPORT
 # Importation différée de models à l'intérieur de la fonction
 # from module_expert.models import CasClinique # Retire cet import global
 
-async def search_pedia_cases_fn(symptoms: str, tool_context: ToolContext) -> str:
+async def search_pedia_cases(symptoms: str, tool_context: ToolContext) -> str:
     """
     Recherche des cas cliniques similaires dans la base de connaissances
     pour le domaine de la Pédiatrie.
@@ -46,4 +46,4 @@ async def search_pedia_cases_fn(symptoms: str, tool_context: ToolContext) -> str
     except Exception as e:
         return f"Erreur lors de la recherche en Pédiatrie: {str(e)}"
 
-search_pedia_cases = FunctionTool(func=search_pedia_cases_fn)
+search_pedia_cases = FunctionTool(func=search_pedia_cases)

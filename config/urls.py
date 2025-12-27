@@ -3,6 +3,11 @@
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from module_auth.views import RegisterView, LoginView, LogoutView
+from module_auth.views import (
+    RegisterView, LoginView, LogoutView, 
+    ExpertRegisterView, ExpertLoginView
+)
 
 urlpatterns = [
     # 1. Route pour l'interface d'administration de Django
@@ -25,4 +30,10 @@ urlpatterns = [
     
     # AJOUT : Route pour le Tuteur Intelligent (Chat & Logique Pédagogique)
     path('api/v1/tuteur/', include('module_tuteur.urls')),
+    path('api/v1/auth/register/', RegisterView.as_view(), name='auth_register'),
+    path('api/v1/auth/login/', LoginView.as_view(), name='auth_login'),
+    path('api/v1/auth/logout/', LogoutView.as_view(), name='auth_logout'),
+    # --- NOUVELLES ROUTES POUR LES EXPERTS ---
+    path('api/v1/auth/expert/register/', ExpertRegisterView.as_view(), name='auth_expert_register'),
+    path('api/v1/auth/expert/login/', ExpertLoginView.as_view(), name='auth_expert_login'),
 ]

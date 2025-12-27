@@ -2,6 +2,7 @@
 
 import uuid
 from django.db import models
+from django.conf import settings
 
 class DomaineMedical(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -13,7 +14,11 @@ class DomaineMedical(models.Model):
 
 class ExpertHumain(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # --- AJOUT CRUCIAL ---
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="experthumain")
+    # --- FIN DE L'AJOUT ---
     nom = models.CharField(max_length=255)
+    email = models.EmailField(unique=True, default="default@email.com") # Ajoutez une valeur par défaut temporaire
     matricule = models.CharField(max_length=100, unique=True)
     domaine_expertise = models.ForeignKey(
         DomaineMedical, 

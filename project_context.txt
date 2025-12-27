@@ -1,5 +1,5 @@
 Project Context From: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend
-Generated On: sam. 20 déc. 2025 17:38:58 WAT
+Generated On: sam. 27 déc. 2025 17:11:35 WAT
 ===============================================
 Ignored Directory Patterns: .* node_modules vendor build dist target __pycache__ .next cache target storage
 Ignored File Patterns: *.log *.jar *.pdf *.class *.sqlite project_context.txt package-lock.json yarn.lock composer.lock *.ico pnpm-lock.yaml
@@ -8,41 +8,73 @@ Ignored File Patterns: *.log *.jar *.pdf *.class *.sqlite project_context.txt pa
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/config/adk_session.py
 
 import os
-from dotenv import load_dotenv # Import nécessaire
+from dotenv import load_dotenv
 from google.adk.sessions import DatabaseSessionService
 
-# 1. On force le chargement du .env situé à la racine
-# (On remonte d'un niveau par rapport à 'config/')
+# 1. Chargement du .env
 base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(base_dir, '.env'))
 
-# 2. Récupération des variables avec des valeurs par défaut pour le LOCAL
-# Note: On force '127.0.0.1' si la variable est vide
+# 2. Récupération des variables de connexion
 DB_USER = os.environ.get('DB_USER', 'backendsti')
 DB_PASSWORD = os.environ.get('DB_PASSWORD', 'backendsti')
-DB_HOST = os.environ.get('DB_HOST', '127.0.0.1') 
+DB_HOST = os.environ.get('DB_HOST', '127.0.0.1')
 DB_PORT = os.environ.get('DB_PORT', '5432')
 DB_NAME = os.environ.get('DB_NAME', 'backendsti')
 
-# 3. Construction de l'URL
-# Important : asyncpg est requis pour l'async
+# 3. Construction de l'URL de la base de données (simple, sans options)
 db_url = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_NAME}"
 
-# Debug : Affiche l'URL (masque le mot de passe pour sécurité si tu veux)
-print(f"🔌 ADK Connect to: postgresql+asyncpg://{DB_USER}:***@{DB_HOST}:{DB_PORT}/{DB_NAME}")
 
-session_service = DatabaseSessionService(db_url=db_url)// END OF FILE: config/adk_session.py
+# 4. Définition de la fonction d'instanciation du service
+def get_adk_session_service():
+    """
+    Instancie le DatabaseSessionService en lui passant les options de connexion
+    pour que son moteur interne utilise le bon schéma PostgreSQL.
+    Ceci est la méthode de contournement pour le bug de l'argument 'schema'.
+    """
+    print("🔧 Instanciation (Workaround) du ADK DatabaseSessionService...")
+
+    # On définit les options que SQLAlchemy `create_async_engine` comprend.
+    engine_options = {
+        "connect_args": {
+            "server_settings": {
+                # Ceci dit à PostgreSQL: "Pour cette connexion, cherche et crée les tables
+                # en priorité dans 'adk_schema'."
+                "search_path": "adk_schema,public"
+            }
+        }
+    }
+
+    # SOLUTION FINALE :
+    # On ne passe QUE db_url et les options compatibles avec create_async_engine.
+    # On ne passe SURTOUT PAS l'argument 'schema' qui cause le TypeError.
+    # La logique du `search_path` va forcer la création et la recherche dans le bon schéma.
+    return DatabaseSessionService(
+        db_url=db_url,
+        **engine_options
+    )// END OF FILE: config/adk_session.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/config/asgi.py
 
 import os
+import django
 
 from django.core.asgi import get_asgi_application
+from django.core.management import call_command  # Import pour exécuter les commandes Django
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
-application = get_asgi_application()
-// END OF FILE: config/asgi.py
+# Configure Django une seule fois au démarrage de l'application ASGI
+django.setup()
+
+# Exécuter la commande init_data
+try:
+    call_command('init_data')
+except Exception as e:
+    print(f"Erreur lors de l'exécution de init_data : {e}")
+
+application = get_asgi_application()// END OF FILE: config/asgi.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/config/settings.py
 
@@ -88,10 +120,13 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'rest_framework',
     'drf_spectacular',
+    'rest_framework.authtoken',
     'module_expert',
+    'module_auth',
     'module_apprenant',
     'module_interface',
     'module_tuteur',
+    'corsheaders',  # Add CORS headers to allow requests from all origins
 ]
 
 MIDDLEWARE = [
@@ -102,6 +137,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',  # Add CORS middleware
 ]
 
 ROOT_URLCONF = 'config.urls'
@@ -199,7 +235,10 @@ SPECTACULAR_SETTINGS = {
     'ENUM_NAME_OVERRIDES': {
         'NiveauDifficulteEnum': 'module_expert.models.CasClinique.NiveauDifficulté',
     },
-}// END OF FILE: config/settings.py
+}
+
+# Autoriser les requêtes de n'importe quelle origine
+CORS_ALLOW_ALL_ORIGINS = True// END OF FILE: config/settings.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/config/urls.py
 
@@ -208,6 +247,11 @@ SPECTACULAR_SETTINGS = {
 from django.contrib import admin
 from django.urls import path, include
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
+from module_auth.views import RegisterView, LoginView, LogoutView
+from module_auth.views import (
+    RegisterView, LoginView, LogoutView, 
+    ExpertRegisterView, ExpertLoginView
+)
 
 urlpatterns = [
     # 1. Route pour l'interface d'administration de Django
@@ -230,6 +274,12 @@ urlpatterns = [
     
     # AJOUT : Route pour le Tuteur Intelligent (Chat & Logique Pédagogique)
     path('api/v1/tuteur/', include('module_tuteur.urls')),
+    path('api/v1/auth/register/', RegisterView.as_view(), name='auth_register'),
+    path('api/v1/auth/login/', LoginView.as_view(), name='auth_login'),
+    path('api/v1/auth/logout/', LogoutView.as_view(), name='auth_logout'),
+    # --- NOUVELLES ROUTES POUR LES EXPERTS ---
+    path('api/v1/auth/expert/register/', ExpertRegisterView.as_view(), name='auth_expert_register'),
+    path('api/v1/auth/expert/login/', ExpertLoginView.as_view(), name='auth_expert_login'),
 ]// END OF FILE: config/urls.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/config/wsgi.py
@@ -242,10 +292,6 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 application = get_wsgi_application()
 // END OF FILE: config/wsgi.py
-
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/db.sqlite3
-
-// END OF FILE: db.sqlite3
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/deploy-radical.sh
 
@@ -300,7 +346,7 @@ ssh ${SSH_USER}@${DROPLET_IP} << EOF
 
     echo -e "\n--- 2.6. Collecte des fichiers statiques ---"
     # --noinput pour éviter les questions de confirmation
-    docker compose -f ${DOCKER_COMPOSE_FILE} exec web python manage.py collectstatic --noinput
+    docker compose -f ${DOCKER_COMPOSE_FILE} STI_projet_backend 
 
     echo -e "\n--- Déploiement distant terminé ! ---"
     echo "Votre application devrait être accessible via http://${DROPLET_IP}/api/docs/"
@@ -366,17 +412,6 @@ version: '3.9'
 
 services:
   # On garde le service web configuré au cas où, mais on ne le lancera pas
-  web:
-    build: .
-    command: python manage.py runserver 0.0.0.0:8000
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
-    env_file:
-      - .env
-    depends_on:
-      - db
 
   db:
     image: postgres:15
@@ -508,7 +543,7 @@ DB_SSLMODE=disable
 
 # --- Google AI ---
 GOOGLE_GENAI_USE_VERTEXAI=FALSE
-GOOGLE_API_KEY=AIzaSyD2MzLTRkr6PPH1WQMHFM7XGYrvb-yl_i8// END OF FILE: .env
+GOOGLE_API_KEY=AIzaSyDpVdELSMoyPL-HrocfJNVArO0WFXoIl0o// END OF FILE: .env
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/.gitignore
 
@@ -518,6 +553,43 @@ __pycache__/
 db.sqlite3
 .DS_Store
 // END OF FILE: .gitignore
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/intermediaire
+
+version: '3.9'
+
+services:
+  # On garde le service web configuré au cas où, mais on ne le lancera pas
+  web:
+    build: .
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    # --- AJOUT IMPORTANT ICI ---
+    # Cela permet à ton 'python manage.py runserver' local de parler au Docker
+    ports:
+      - "5432:5432"  
+    # ---------------------------
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASSWORD}
+    env_file:
+      - .env
+
+volumes:
+  postgres_data:// END OF FILE: intermediaire
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/manage.py
 
@@ -567,10 +639,11 @@ class ModuleApprenantConfig(AppConfig):
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/migrations/0001_initial.py
 
-# Generated by Django 6.0 on 2025-12-10 15:25
+# Generated by Django 6.0 on 2025-12-27 14:01
 
 import django.db.models.deletion
 import uuid
+from django.conf import settings
 from django.db import migrations, models
 
 
@@ -580,6 +653,7 @@ class Migration(migrations.Migration):
 
     dependencies = [
         ('module_expert', '0001_initial'),
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -589,6 +663,8 @@ class Migration(migrations.Migration):
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('nom', models.CharField(max_length=255)),
                 ('email', models.EmailField(max_length=254, unique=True)),
+                ('date_inscription', models.DateTimeField(auto_now_add=True)),
+                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='apprenant', to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
@@ -597,14 +673,16 @@ class Migration(migrations.Migration):
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
                 ('nom', models.CharField(max_length=255, unique=True)),
                 ('description', models.TextField()),
+                ('icon', models.CharField(blank=True, max_length=100, null=True)),
             ],
         ),
         migrations.CreateModel(
             name='ProfilEtudiant',
             fields=[
-                ('apprenant', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, serialize=False, to='module_apprenant.apprenant')),
+                ('apprenant', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='profil', serialize=False, to='module_apprenant.apprenant')),
                 ('xp_total', models.PositiveIntegerField(default=0)),
-                ('lacunes_identifiees', models.TextField(blank=True)),
+                ('lacunes_identifiees', models.JSONField(blank=True, default=list)),
+                ('updated_at', models.DateTimeField(auto_now=True)),
                 ('badges', models.ManyToManyField(blank=True, to='module_apprenant.badge')),
             ],
         ),
@@ -612,9 +690,12 @@ class Migration(migrations.Migration):
             name='NiveauCompetence',
             fields=[
                 ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('niveau_actuel', models.CharField(choices=[('DEBUTANT', 'Débutant'), ('INTERMEDIAIRE', 'Intermédiaire'), ('AVANCE', 'Avancé'), ('EXPERT', 'Expert')], max_length=20)),
+                ('niveau_actuel', models.CharField(choices=[('DEBUTANT', 'Débutant'), ('INTERMEDIAIRE', 'Intermédiaire'), ('AVANCE', 'Avancé'), ('EXPERT', 'Expert')], default='DEBUTANT', max_length=20)),
+                ('score_anamnese', models.FloatField(default=0.0)),
                 ('score_diagnostic', models.FloatField(default=0.0)),
-                ('score_raisonnement', models.FloatField(default=0.0)),
+                ('score_traitement', models.FloatField(default=0.0)),
+                ('score_relationnel', models.FloatField(default=0.0)),
+                ('progression_globale', models.FloatField(default=0.0)),
                 ('domaine', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='niveaux_apprenants', to='module_expert.domainemedical')),
                 ('profil_etudiant', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='competences', to='module_apprenant.profiletudiant')),
             ],
@@ -633,46 +714,62 @@ class Migration(migrations.Migration):
 
 import uuid
 from django.db import models
-from module_expert.models import DomaineMedical # Importation inter-applications
-
-
-# Create your models here.
-
-
+from django.conf import settings
+# On importe les modèles externes au début (si pas de boucle d'import)
+from module_expert.models import DomaineMedical, CasClinique 
 
 class Apprenant(models.Model):
-    id=models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-    nom=models.CharField(max_length=255)
-    email=models.EmailField(unique=True)
+    """
+    Représente l'étudiant médecin.
+    Note: Idéalement, relier ceci au modèle User de Django pour l'auth.
+    """
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    nom = models.CharField(max_length=255)
+    email = models.EmailField(unique=True)
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="apprenant")
+    date_inscription = models.DateTimeField(auto_now_add=True) # Utile pour le suivi
 
     def __str__(self):
         return self.email
-    
-
 
 class Badge(models.Model):
+    """
+    Récompenses gamifiées (ex: "Expert Malaria", "Premier Diagnostic").
+    """
+    nom = models.CharField(max_length=255, unique=True)
+    description = models.TextField()
+    icon = models.CharField(max_length=100, blank=True, null=True) # Pour le frontend (ex: nom d'icône FontAwesome)
 
-    nom=models.CharField(max_length=255, unique=True)
-
-    description=models.TextField()
     def __str__(self):
-        return  self.nom
-    
+        return self.nom
 
 class ProfilEtudiant(models.Model):
-    apprenant=models.OneToOneField(Apprenant,on_delete=models.CASCADE,primary_key=True)
+    """
+    Le profil global de l'étudiant, contenant son XP et ses badges.
+    """
+    apprenant = models.OneToOneField(
+        Apprenant, 
+        on_delete=models.CASCADE, 
+        primary_key=True,
+        related_name="profil"
+    )
     xp_total = models.PositiveIntegerField(default=0)
-    lacunes_identifiees = models.TextField(blank=True)
+    
+    # Utilisation de JSONField pour stocker une liste (ex: ["Ne pose pas assez de questions", "Oublie la température"])
+    # C'est plus flexible pour l'IA qui peut ajouter/retirer des items.
+    lacunes_identifiees = models.JSONField(default=list, blank=True) 
+    
     badges = models.ManyToManyField(Badge, blank=True)
+    updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
-        return f"Profil de {self.apprenant.email}"
-
+        return f"Profil de {self.apprenant.email} (XP: {self.xp_total})"
 
 class NiveauCompetence(models.Model):
-    # On réutilise l'énumération de CasClinique pour la cohérence
-    from module_expert.models import CasClinique
-    
+    """
+    Détail des compétences par domaine médical (ex: Cardio, Malaria).
+    C'est ICI que l'Agent Expert va écrire les scores.
+    """
     profil_etudiant = models.ForeignKey(
         ProfilEtudiant, 
         on_delete=models.CASCADE, 
@@ -683,18 +780,28 @@ class NiveauCompetence(models.Model):
         on_delete=models.PROTECT, 
         related_name="niveaux_apprenants"
     )
+    
+    # On reprend les choix du CasClinique pour la difficulté atteinte
     niveau_actuel = models.CharField(
         max_length=20, 
-        choices=CasClinique.NiveauDifficulté.choices
+        choices=CasClinique.NiveauDifficulté.choices,
+        default=CasClinique.NiveauDifficulté.DEBUTANT
     )
-    score_diagnostic = models.FloatField(default=0.0)
-    score_raisonnement = models.FloatField(default=0.0)
+
+    # --- SCORES DÉTAILLÉS (0 à 100 par exemple) ---
+    # Ces champs correspondent aux critères que l'Agent Expert évalue
+    score_anamnese = models.FloatField(default=0.0)    # Qualité de l'interrogatoire
+    score_diagnostic = models.FloatField(default=0.0)  # Justesse du diagnostic
+    score_traitement = models.FloatField(default=0.0)  # Pertinence de l'ordonnance
+    score_relationnel = models.FloatField(default=0.0) # Empathie / Ton (optionnel)
+    
+    progression_globale = models.FloatField(default=0.0) # Moyenne ou % de complétion du module
 
     class Meta:
-        unique_together = ('profil_etudiant', 'domaine')
+        unique_together = ('profil_etudiant', 'domaine') # Un seul niveau par domaine par étudiant
 
     def __str__(self):
-        return f"{self.profil_etudiant.apprenant.email} - {self.domaine.nom}"// END OF FILE: module_apprenant/models.py
+        return f"{self.profil_etudiant.apprenant.email} - {self.domaine.nom} ({self.niveau_actuel})"// END OF FILE: module_apprenant/models.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/serializers.py
 
@@ -786,6 +893,251 @@ class NiveauCompetenceViewSet(viewsets.ModelViewSet):
     serializer_class = NiveauCompetenceSerializer
 // END OF FILE: module_apprenant/views.py
 
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/admin.py
+
+from django.contrib import admin
+
+# Register your models here.
+// END OF FILE: module_auth/admin.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/apps.py
+
+from django.apps import AppConfig
+
+
+class ModuleAuthConfig(AppConfig):
+    name = 'module_auth'
+// END OF FILE: module_auth/apps.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/__init__.py
+
+// END OF FILE: module_auth/__init__.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/migrations/__init__.py
+
+// END OF FILE: module_auth/migrations/__init__.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/models.py
+
+from django.db import models
+
+# Create your models here.
+// END OF FILE: module_auth/models.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/serializers.py
+
+
+
+from rest_framework import serializers
+from django.contrib.auth.models import User
+from django.contrib.auth import authenticate
+from module_apprenant.models import Apprenant
+from module_expert.models import ExpertHumain, DomaineMedical
+
+class RegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, min_length=8)
+    nom = serializers.CharField(required=True, max_length=100)
+    
+    class Meta:
+        model = Apprenant
+        fields = ('email', 'password', 'nom')
+
+    def create(self, validated_data):
+        # On sépare les données de User et de Apprenant
+        user_email = validated_data['email']
+        user_password = validated_data['password']
+        apprenant_nom = validated_data['nom']
+
+        # Création de l'utilisateur Django standard
+        user = User.objects.create_user(
+            username=user_email, # On utilise l'email comme username pour la simplicité
+            email=user_email,
+            password=user_password
+        )
+        
+        # Création de l'apprenant lié
+        apprenant = Apprenant.objects.create(
+            user=user,
+            email=user_email,
+            nom=apprenant_nom
+        )
+        return apprenant
+
+class LoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        user = authenticate(username=data['email'], password=data['password'])
+        if not user:
+            raise serializers.ValidationError("Email ou mot de passe incorrect.")
+        
+        if not hasattr(user, 'apprenant'):
+             raise serializers.ValidationError("Ce compte n'est pas un compte apprenant.")
+
+        return data
+    
+
+class ExpertRegisterSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, required=True, min_length=8)
+    # On s'attend à recevoir l'UUID du domaine d'expertise
+    domaine_expertise_id = serializers.UUIDField(write_only=True)
+
+    class Meta:
+        model = ExpertHumain
+        fields = ('email', 'password', 'nom', 'matricule', 'domaine_expertise_id')
+
+    def create(self, validated_data):
+        user_email = validated_data['email']
+        user_password = validated_data['password']
+        
+        # Création de l'utilisateur Django
+        user = User.objects.create_user(
+            username=user_email,
+            email=user_email,
+            password=user_password
+        )
+        
+        # Récupération du domaine d'expertise
+        try:
+            domaine = DomaineMedical.objects.get(id=validated_data['domaine_expertise_id'])
+        except DomaineMedical.DoesNotExist:
+            raise serializers.ValidationError("Le domaine d'expertise spécifié n'existe pas.")
+
+        # Création de l'expert lié
+        expert = ExpertHumain.objects.create(
+            user=user,
+            email=user_email,
+            nom=validated_data['nom'],
+            matricule=validated_data['matricule'],
+            domaine_expertise=domaine
+        )
+        return expert
+
+class ExpertLoginSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+    password = serializers.CharField()
+
+    def validate(self, data):
+        user = authenticate(username=data['email'], password=data['password'])
+        if not user:
+            raise serializers.ValidationError("Email ou mot de passe incorrect.")
+        
+        # On vérifie que cet utilisateur est bien un expert
+        if not hasattr(user, 'experthumain'):
+             raise serializers.ValidationError("Ce compte n'est pas un compte expert.")
+
+        return data// END OF FILE: module_auth/serializers.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/tests.py
+
+from django.test import TestCase
+
+# Create your tests here.
+// END OF FILE: module_auth/tests.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/views.py
+
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.views import APIView
+from rest_framework.authtoken.models import Token
+from django.contrib.auth import authenticate
+from .serializers import RegisterSerializer, LoginSerializer
+from module_apprenant.models import Apprenant
+from module_expert.models import ExpertHumain, DomaineMedical
+from .serializers import RegisterSerializer, LoginSerializer, ExpertRegisterSerializer, ExpertLoginSerializer
+class RegisterView(APIView):
+    """Vue pour l'inscription d'un nouvel apprenant."""
+    permission_classes = [] # Pas besoin d'être authentifié pour s'inscrire
+
+    def post(self, request):
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            # Crée un 'Apprenant' et un 'User' Django associé
+            apprenant = serializer.save()
+            return Response({
+                "id": apprenant.id,
+                "nom": apprenant.nom,
+                "email": apprenant.email,
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class LoginView(APIView):
+    """Vue pour la connexion et la récupération d'un token."""
+    permission_classes = []
+
+    def post(self, request):
+        serializer = LoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        # Le serializer valide que l'utilisateur existe
+        email = serializer.validated_data['email']
+        apprenant = Apprenant.objects.get(email=email)
+        
+        # Créer ou récupérer le token
+        token, created = Token.objects.get_or_create(user=apprenant.user)
+        
+        return Response({
+            'token': token.key,
+            'apprenant': {
+                'id': apprenant.id,
+                'nom': apprenant.nom,
+                'email': apprenant.email,
+            }
+        })
+
+class LogoutView(APIView):
+    """Vue pour la déconnexion (suppression du token)."""
+    def post(self, request):
+        try:
+            request.user.auth_token.delete()
+        except (AttributeError, Token.DoesNotExist):
+            pass # L'utilisateur n'était pas connecté ou n'avait pas de token
+        return Response(status=status.HTTP_204_NO_CONTENT)
+    
+
+class ExpertRegisterView(APIView):
+    """Vue pour l'inscription d'un nouvel expert."""
+    permission_classes = []
+
+    def post(self, request):
+        serializer = ExpertRegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            expert = serializer.save()
+            return Response({
+                "id": expert.id,
+                "nom": expert.nom,
+                "email": expert.email,
+                "matricule": expert.matricule
+            }, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+class ExpertLoginView(APIView):
+    """Vue pour la connexion d'un expert et la récupération d'un token."""
+    permission_classes = []
+
+    def post(self, request):
+        serializer = ExpertLoginSerializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
+        email = serializer.validated_data['email']
+        expert = ExpertHumain.objects.get(email=email)
+        token, created = Token.objects.get_or_create(user=expert.user)
+        
+        return Response({
+            'token': token.key,
+            'expert': {
+                'id': expert.id,
+                'nom': expert.nom,
+                'email': expert.email,
+                'matricule': expert.matricule,
+                'domaine': expert.domaine_expertise.nom
+            }
+        })// END OF FILE: module_auth/views.py
+
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/admin.py
 
 from django.contrib import admin
@@ -795,16 +1147,15 @@ from django.contrib import admin
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/agent.py
 
-
-
 import json
 from google.adk.agents import Agent
 
 from module_expert.constante import MODEL_NAME
-from .tools.domain_tools import list_available_domains
 
 from google.adk.apps.app import App
 from google.adk.agents.context_cache_config import ContextCacheConfig
+
+from module_expert.tools.descriptions import KEY_ROOT_DELEGATION
 from .subagents import (
     malaria_expert,
     cardiologie_expert,
@@ -815,83 +1166,53 @@ from .subagents import (
 import os
 import sys
 import django
-
-from .tools.domain_tools import list_available_domains
-
-
 from dotenv import load_dotenv
 
-# --- BLOC D'INITIALISATION DJANGO (OBLIGATOIRE POUR ADK WEB) ---
 
-# 1. Charger les variables d'environnement (.env à la racine)
-# Cela permet à Django de trouver DB_USER, DB_PASSWORD, etc.
-current_dir = os.path.dirname(os.path.abspath(__file__))
-base_dir = os.path.dirname(current_dir) # Remonte vers /backend
-load_dotenv(os.path.join(base_dir, '.env'))
-
-# 2. Ajouter la racine du projet au Python Path
-sys.path.append(base_dir)
-
-# 3. Configurer les settings Django
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
-
-# 4. Démarrer Django
-# C'est cette ligne qui permet ensuite d'importer les modèles
-django.setup()
-
-# --- FIN DU BLOC D'INITIALISATION ---
+# NOUVEL IMPORT DE L'OUTIL DE LECTURE DE DOMAINE
+from .tools.domain_tools import get_session_domain # <--- NOUVEL IMPORT
 
 # --- AGENT RACINE ---
 
 root_expert_instruction = (
-    "Tu es l'Agent Expert Racine du système de Tuteur Intelligent.\n"
-    "Ton rôle est d'orchestrer l'expertise médicale.\n\n"
-    
-    "### FONCTIONNEMENT ###\n"
-    "1. Tu reçois une demande concernant un cas clinique.\n"
-    "2. Tu dois identifier le DOMAINE MÉDICAL concerné (ex: Paludisme, Cardiologie, etc.).\n"
-    "3. Tu dois déléguer l'analyse au sous-agent expert de ce domaine.\n"
-    "   - Si le cas concerne le Paludisme, délègue à 'Expert_Paludisme'.\n"
-    "   - Si le cas concerne la Cardiologie, délègue à 'Expert_Cardiologie'.\n"
-    "   - Si le cas concerne la Pédiatrie, délègue à 'Expert_Pediatrie'.\n"
-    "   - Si le cas concerne la Dermatologie, délègue à 'Expert_Dermatologie'.\n"
-    "   - Si aucun expert spécifique n'est disponible, signale-le.\n\n"
-    
-    "Tu ne dois pas inventer de diagnostic toi-même si tu n'as pas les règles spécifiques. "
-    "Ton intelligence réside dans ta capacité à router la demande vers le bon spécialiste."
+    "Tu es un routeur d'experts médicaux. Ton UNIQUE et SEUL objectif est de déterminer le nom de l'expert spécifique à appeler.\n"
+    "### PROCÉDURE OBLIGATOIRE ###\n"
+    "1. Commence TOUJOURS par appeler l'outil 'get_session_domain()' pour obtenir le domaine médical actuel de la session.\n"
+    "2. En te basant sur le RÉSULTAT de cet outil, tu DOIS retourner UNIQUEMENT le nom EXACT du sous-agent expert correspondant, et RIEN D'AUTRE.\n"
+    "   Ceci est un MAPPING STRICT. Ne génère ABSOLUMENT PAS de code Python, de raisonnement, ou d'autres phrases.\n"
+    "   Utilise le résultat de 'get_session_domain()' pour ce mapping :\n"
+    "   - Si le domaine est 'Paludisme', réponds: 'Expert_Paludisme'.\n"
+    "   - Si le domaine est 'Cardiologie', réponds: 'Expert_Cardiologie'.\n"
+    "   - Si le domaine est 'Dermatologie', réponds: 'Expert_Dermatologie'.\n"
+    "   - Si le domaine est 'Pédiatrie', réponds: 'Expert_Pediatrie'.\n"
+    "   - Si le domaine retourné par l'outil n'est pas l'un de ceux-ci, réponds: 'Domaine_Inconnu'.\n"
+    "RÉPONDS UNIQUEMENT avec le nom de l'agent. Par exemple: 'Expert_Paludisme'."
 )
 
 root_agent = Agent(
     name="Root_Expert_Medical",
-    
-    model=MODEL_NAME,
-    description="Orchestrateur expert médical.",
+    model=MODEL_NAME, 
+    description="Routeur strict pour les experts médicaux.",
     instruction=root_expert_instruction,
-    tools=[list_available_domains],
+    tools=[get_session_domain], # <--- L'AGENT RACINE UTILISE MAINTENANT CET OUTIL
     sub_agents=[
         malaria_expert,
         cardiologie_expert,
         pediatrie_expert,
         dermatologie_expert
-    ]
+    ],
+    output_key=KEY_ROOT_DELEGATION
 )
 
-
 expert_app = App(
-    # CORRECTION ICI : remplace les tirets par des underscores
-    name='sti_expert_medical_app', 
-    
+    name='sti_app', # Assurez-vous que c'est 'sti_app'
     root_agent=root_agent,
     context_cache_config=ContextCacheConfig(
         min_tokens=1000,
         ttl_seconds=3600,
         cache_intervals=10,
     ),
-)
-
-# Note: La factory 'create_expert_agent' a été remplacée par l'architecture multi-agents statique/dynamique
-# définie dans le dossier 'subagents'.
-// END OF FILE: module_expert/agent.py
+)// END OF FILE: module_expert/agent.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/apps.py
 
@@ -912,12 +1233,89 @@ MODEL_NAME = "gemini-2.5-flash-lite"  # Remplacez par le nom réel du modèle
 
 // END OF FILE: module_expert/__init__.py
 
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/management/commands/init_data.py
+
+import json
+from django.core.management.base import BaseCommand
+from module_expert.models import DomaineMedical, CasClinique
+
+class Command(BaseCommand):
+    help = 'Initialise les Domaines Médicaux et un Cas Clinique de test (Requis pour le fonctionnement).'
+
+    def handle(self, *args, **kwargs):
+        self.stdout.write("🚀 Démarrage de l'initialisation des données de référence...")
+
+        # -----------------------------------------------------------
+        # 1. CRÉATION DES DOMAINES MÉDICAUX
+        # -----------------------------------------------------------
+        domaines = ["Paludisme", "Cardiologie", "Dermatologie", "Pédiatrie"]
+        objs_domaines = {}
+        
+        for nom in domaines:
+            d, created = DomaineMedical.objects.get_or_create(
+                nom=nom,
+                defaults={"description": f"Domaine spécialisé en {nom}"}
+            )
+            objs_domaines[nom] = d
+            if created:
+                self.stdout.write(f"✅ Domaine créé : {nom}")
+            else:
+                self.stdout.write(f"ℹ️ Domaine existant : {nom}")
+
+        # -----------------------------------------------------------
+        # 2. CRÉATION D'UN CAS CLINIQUE (PALUDISME)
+        # -----------------------------------------------------------
+        # Sans ce cas, l'API renverra "Aucun cas disponible" même si le domaine existe.
+        cas_titre = "Cas #1: Fièvre au retour du village"
+        
+        cas_data = {
+            "nom": "Jean",
+            "age": 25,
+            "motif": "Fièvre et maux de tête",
+            "histoire": "Revient d'un séjour de 2 semaines au village (zone marécageuse). A commencé à chauffer hier soir.",
+            "constantes": {"temperature": "39.5°C", "tension": "12/8", "poids": "70kg"},
+            "symptomes": ["Céphalées", "Frissons", "Courbatures", "Nausées"],
+            "test_tdr": "Positif (Pf)"
+        }
+
+        cas, created = CasClinique.objects.get_or_create(
+            titre=cas_titre,
+            domaine=objs_domaines["Paludisme"],
+            defaults={
+                "statut": CasClinique.StatutCas.PUBLIE, # CRITIQUE : Seuls les cas PUBLIE sont sélectionnables
+                "difficulte": CasClinique.NiveauDifficulté.DEBUTANT,
+                "donnees_patient": cas_data,
+                "historique_medical": "Patient sans antécédents particuliers. Pas d'allergie connue.",
+                "solution_experte": (
+                    "1. Suspecter un Paludisme simple devant la fièvre au retour de zone endémique.\n"
+                    "2. Confirmer par un TDR ou Goutte Épaisse.\n"
+                    "3. Traiter par ACT (Artemether-Lumefantrine)."
+                )
+            }
+        )
+
+        if created:
+            self.stdout.write(f"✅ Cas Clinique de test créé : {cas_titre}")
+        else:
+            self.stdout.write(f"ℹ️ Cas Clinique de test existant : {cas_titre}")
+
+        self.stdout.write(self.style.SUCCESS("🎉 Initialisation terminée ! Les domaines sont prêts."))// END OF FILE: module_expert/management/commands/init_data.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/management/commands/__init__.py
+
+// END OF FILE: module_expert/management/commands/__init__.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/management/__init__.py
+
+// END OF FILE: module_expert/management/__init__.py
+
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/migrations/0001_initial.py
 
-# Generated by Django 6.0 on 2025-12-10 15:25
+# Generated by Django 6.0 on 2025-12-27 14:01
 
 import django.db.models.deletion
 import uuid
+from django.conf import settings
 from django.db import migrations, models
 
 
@@ -926,6 +1324,7 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
+        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
@@ -957,8 +1356,10 @@ class Migration(migrations.Migration):
             fields=[
                 ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
                 ('nom', models.CharField(max_length=255)),
+                ('email', models.EmailField(default='default@email.com', max_length=254, unique=True)),
                 ('matricule', models.CharField(max_length=100, unique=True)),
                 ('domaine_expertise', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='experts_humains', to='module_expert.domainemedical')),
+                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='experthumain', to=settings.AUTH_USER_MODEL)),
             ],
         ),
         migrations.CreateModel(
@@ -997,6 +1398,7 @@ class Migration(migrations.Migration):
 
 import uuid
 from django.db import models
+from django.conf import settings
 
 class DomaineMedical(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
@@ -1008,7 +1410,11 @@ class DomaineMedical(models.Model):
 
 class ExpertHumain(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    # --- AJOUT CRUCIAL ---
+    user = models.OneToOneField(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="experthumain")
+    # --- FIN DE L'AJOUT ---
     nom = models.CharField(max_length=255)
+    email = models.EmailField(unique=True, default="default@email.com") # Ajoutez une valeur par défaut temporaire
     matricule = models.CharField(max_length=100, unique=True)
     domaine_expertise = models.ForeignKey(
         DomaineMedical, 
@@ -1117,22 +1523,27 @@ class CasCliniqueSerializer(serializers.ModelSerializer):
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/cardiologie/agent.py
 
 from google.adk.agents import Agent
-from .tools.expert_tools import search_cardio_cases
+
 from module_expert.constante import MODEL_NAME
+from module_expert.tools.descriptions import DESC_CARDIOLOGIE, INSTR_CARDIOLOGIE, KEY_EXPERT_ANALYSIS
+
+# Import des 3 outils nécessaires
+from .tools.expert_tools import search_cardio_cases
+from module_expert.tools.scoring_tools import enregistrer_evaluations_multiples
+from module_expert.tools.lire_conversation import lire_conversation
 
 cardiologie_expert = Agent(
     name="Expert_Cardiologie",
     model=MODEL_NAME,
-    description="Expert médical spécialisé dans les maladies cardiaques et vasculaires.",
-    instruction=(
-        "Tu es un expert en Cardiologie.\n"
-        "Ton rôle est d'analyser les cas cliniques liés au cœur (douleurs thoraciques, hypertension, etc.).\n"
-        "Utilise l'outil 'search_cardio_cases' pour valider tes hypothèses avec la base de connaissances.\n"
-        "Sois vigilant sur les signes d'urgence vitale."
-    ),
-    tools=[search_cardio_cases]
-)
-// END OF FILE: module_expert/subagents/cardiologie/agent.py
+    description=DESC_CARDIOLOGIE,
+    instruction=INSTR_CARDIOLOGIE,
+    tools=[
+        lire_conversation,      # Indispensable pour voir le chat
+        search_cardio_cases,    # Spécifique au domaine
+        enregistrer_evaluations_multiples      # Indispensable pour noter
+    ],
+    output_key=KEY_EXPERT_ANALYSIS
+)// END OF FILE: module_expert/subagents/cardiologie/agent.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/cardiologie/__init__.py
 
@@ -1148,7 +1559,7 @@ from asgiref.sync import sync_to_async # NOUVEL IMPORT : pour appeler le code sy
 # Importation différée de models à l'intérieur de la fonction pour assurer l'initialisation de Django
 # from module_expert.models import CasClinique # Retire cet import global
 
-async def search_cardio_cases_fn(symptoms: str, tool_context: ToolContext) -> str:
+async def search_cardio_cases(symptoms: str, tool_context: ToolContext) -> str:
     """
     Recherche des cas cliniques similaires dans la base de connaissances
     pour le domaine de la Cardiologie.
@@ -1190,8 +1601,8 @@ async def search_cardio_cases_fn(symptoms: str, tool_context: ToolContext) -> st
     except Exception as e:
         return f"Erreur lors de la recherche en Cardiologie: {str(e)}"
 
-# Le FunctionTool doit être marqué comme asynchrone (is_async=True)
-search_cardio_cases = FunctionTool(func=search_cardio_cases_fn)// END OF FILE: module_expert/subagents/cardiologie/tools/expert_tools.py
+# Le FunctionTool doit être marqué comme asynchrone 
+search_cardio_cases = FunctionTool(func=search_cardio_cases)// END OF FILE: module_expert/subagents/cardiologie/tools/expert_tools.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/cardiologie/tools/knowledge.json
 
@@ -1207,22 +1618,28 @@ search_cardio_cases = FunctionTool(func=search_cardio_cases_fn)// END OF FILE: m
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/dermatologie/agent.py
 
 from google.adk.agents import Agent
-from .tools.expert_tools import search_derma_cases
+
 from module_expert.constante import MODEL_NAME
+from module_expert.tools.descriptions import DESC_DERMATOLOGIE, INSTR_DERMATOLOGIE, KEY_EXPERT_ANALYSIS
+
+# Import des 3 outils nécessaires
+from .tools.expert_tools import search_derma_cases
+from module_expert.tools.scoring_tools import enregistrer_evaluations_multiples
+from module_expert.tools.lire_conversation import lire_conversation
 
 dermatologie_expert = Agent(
     name="Expert_Dermatologie",
     model=MODEL_NAME,
-    description="Expert médical spécialisé dans les maladies de la peau.",
-    instruction=(
-        "Tu es un expert en Dermatologie.\n"
-        "Ton rôle est d'analyser les affections cutanées.\n"
-        "Utilise l'outil 'search_derma_cases' pour comparer les symptômes visuels ou décrits avec ta base.\n"
-        "Sois précis sur la description des lésions."
-    ),
-    tools=[search_derma_cases]
-)
-// END OF FILE: module_expert/subagents/dermatologie/agent.py
+    description=DESC_DERMATOLOGIE,
+    instruction=INSTR_DERMATOLOGIE,
+    tools=[
+        lire_conversation,      
+        search_derma_cases,     
+        enregistrer_evaluations_multiples
+                      
+    ],
+    output_key=KEY_EXPERT_ANALYSIS
+)// END OF FILE: module_expert/subagents/dermatologie/agent.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/dermatologie/__init__.py
 
@@ -1238,7 +1655,7 @@ from asgiref.sync import sync_to_async # NOUVEL IMPORT
 # Importation différée de models à l'intérieur de la fonction
 # from module_expert.models import CasClinique # Retire cet import global
 
-async def search_derma_cases_fn(symptoms: str, tool_context: ToolContext) -> str:
+async def search_derma_cases(symptoms: str, tool_context: ToolContext) -> str:
     """
     Recherche des cas cliniques similaires dans la base de connaissances
     pour le domaine de la Dermatologie.
@@ -1278,7 +1695,7 @@ async def search_derma_cases_fn(symptoms: str, tool_context: ToolContext) -> str
     except Exception as e:
         return f"Erreur lors de la recherche en Dermatologie: {str(e)}"
 
-search_derma_cases = FunctionTool(func=search_derma_cases_fn)// END OF FILE: module_expert/subagents/dermatologie/tools/expert_tools.py
+search_derma_cases = FunctionTool(func=search_derma_cases)// END OF FILE: module_expert/subagents/dermatologie/tools/expert_tools.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/dermatologie/tools/knowledge.json
 
@@ -1302,24 +1719,27 @@ from .dermatologie import dermatologie_expert
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/malaria/agent.py
 
 from google.adk.agents import Agent
-from .tools.expert_tools import search_similar_cases
-from module_expert.constante import MODEL_NAME
 
-# Définition de l'agent expert en Paludisme
+from module_expert.constante import MODEL_NAME
+from module_expert.tools.descriptions import DESC_MALARIA, INSTR_MALARIA, KEY_EXPERT_ANALYSIS
+
+# Import des 3 outils nécessaires
+from .tools.expert_tools import search_similar_cases
+from module_expert.tools.scoring_tools import enregistrer_evaluations_multiples
+from module_expert.tools.lire_conversation import lire_conversation
+
 malaria_expert = Agent(
     name="Expert_Paludisme",
     model=MODEL_NAME,
-    description="Expert médical spécialisé dans le diagnostic et le traitement du Paludisme.",
-    instruction=(
-        "Tu es un expert médical spécialisé dans le Paludisme.\n"
-        "Ton rôle est d'analyser les cas suspects de paludisme et de valider les diagnostics.\n"
-        "Utilise l'outil 'search_similar_cases' pour consulter ta base de connaissances (règles de production) "
-        "et comparer le cas actuel avec des cas validés.\n"
-        "Base tes explications UNIQUEMENT sur les preuves médicales et les cas similaires trouvés."
-    ),
-    tools=[search_similar_cases]
-)
-// END OF FILE: module_expert/subagents/malaria/agent.py
+    description=DESC_MALARIA,
+    instruction=INSTR_MALARIA,
+    tools=[
+        lire_conversation,      # Indispensable pour voir le chat
+        search_similar_cases,   # Spécifique au domaine
+        enregistrer_evaluations_multiples        # Indispensable pour noter
+    ],
+    output_key=KEY_EXPERT_ANALYSIS
+)// END OF FILE: module_expert/subagents/malaria/agent.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/malaria/__init__.py
 
@@ -1335,7 +1755,7 @@ from asgiref.sync import sync_to_async # NOUVEL IMPORT
 # Importation différée de models à l'intérieur de la fonction
 # from module_expert.models import CasClinique, DomaineMedical # Retire cet import global
 
-async def search_similar_cases_fn(symptoms: str, tool_context: ToolContext) -> str:
+async def search_similar_cases(symptoms: str, tool_context: ToolContext) -> str:
     """
     Recherche des cas cliniques similaires (règles de production) dans la base de connaissances
     pour le domaine du Paludisme, basés sur les symptômes fournis.
@@ -1375,7 +1795,7 @@ async def search_similar_cases_fn(symptoms: str, tool_context: ToolContext) -> s
     except Exception as e:
         return f"Erreur lors de la recherche dans la base de connaissances: {str(e)}"
 
-search_similar_cases = FunctionTool(func=search_similar_cases_fn)// END OF FILE: module_expert/subagents/malaria/tools/expert_tools.py
+search_similar_cases = FunctionTool(func=search_similar_cases)// END OF FILE: module_expert/subagents/malaria/tools/expert_tools.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/malaria/tools/knowledge.json
 
@@ -1388,25 +1808,60 @@ search_similar_cases = FunctionTool(func=search_similar_cases_fn)// END OF FILE:
   }
 ]// END OF FILE: module_expert/subagents/malaria/tools/knowledge.json
 
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/patient/agent.py
+
+from google.adk.agents import Agent
+from module_expert.constante import MODEL_NAME
+from module_expert.tools.lire_conversation import lire_conversation
+
+patient_agent = Agent(
+    name="agent_patient",
+    model=MODEL_NAME,
+    description="Simulateur de patient malade.",
+    instruction=(
+        "Tu es un PATIENT virtuel dans une consultation médicale.\n"
+        "Ton interlocuteur est un étudiant en médecine (le Docteur).\n\n"
+        
+        "### TA MISSION ###\n"
+        "1. Joue le rôle d'une personne souffrante (sois cohérent avec tes symptômes).\n"
+        "2. Ne sois pas trop technique. Utilise un langage courant (ex: 'j'ai mal au ventre' pas 'douleur abdominale').\n"
+        "3. Si le docteur pose une question floue, demande des précisions.\n\n"
+        
+        "### FONCTIONNEMENT ###\n"
+        "1. Utilise SYSTÉMATIQUEMENT l'outil 'lire_conversation' pour voir ce que le docteur vient de dire.\n"
+        "2. L'outil te donnera l'historique du dialogue sous la forme :\n"
+        "   - DOCTEUR : ...\n"
+        "   - PATIENT (Toi) : ...\n"
+        "3. Réponds directement à la dernière question du Docteur. Ton output sera ta réponse au docteur."
+    ),
+    # <--- output_key est retiré ici ---
+    tools=[lire_conversation]
+)// END OF FILE: module_expert/subagents/patient/agent.py
+
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/pediatrie/agent.py
 
 from google.adk.agents import Agent
-from .tools.expert_tools import search_pedia_cases
+
 from module_expert.constante import MODEL_NAME
+from module_expert.tools.descriptions import DESC_PEDIATRIE, INSTR_PEDIATRIE, KEY_EXPERT_ANALYSIS
+
+# Import des 3 outils nécessaires
+from .tools.expert_tools import search_pedia_cases
+from module_expert.tools.scoring_tools import enregistrer_evaluations_multiples
+from module_expert.tools.lire_conversation import lire_conversation
 
 pediatrie_expert = Agent(
     name="Expert_Pediatrie",
     model=MODEL_NAME,
-    description="Expert médical spécialisé dans la santé des enfants et nourrissons.",
-    instruction=(
-        "Tu es un expert en Pédiatrie.\n"
-        "Ton rôle est d'analyser les cas cliniques concernant des enfants.\n"
-        "Utilise l'outil 'search_pedia_cases' pour valider tes diagnostics.\n"
-        "Adapte tes explications aux spécificités physiologiques de l'enfant."
-    ),
-    tools=[search_pedia_cases]
-)
-// END OF FILE: module_expert/subagents/pediatrie/agent.py
+    description=DESC_PEDIATRIE,
+    instruction=INSTR_PEDIATRIE,
+    tools=[
+        lire_conversation,      # Indispensable pour voir le chat
+        search_pedia_cases,     # Spécifique au domaine
+        enregistrer_evaluations_multiples      # Indispensable pour noter
+    ],
+    output_key=KEY_EXPERT_ANALYSIS
+)// END OF FILE: module_expert/subagents/pediatrie/agent.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/pediatrie/__init__.py
 
@@ -1422,7 +1877,7 @@ from asgiref.sync import sync_to_async # NOUVEL IMPORT
 # Importation différée de models à l'intérieur de la fonction
 # from module_expert.models import CasClinique # Retire cet import global
 
-async def search_pedia_cases_fn(symptoms: str, tool_context: ToolContext) -> str:
+async def search_pedia_cases(symptoms: str, tool_context: ToolContext) -> str:
     """
     Recherche des cas cliniques similaires dans la base de connaissances
     pour le domaine de la Pédiatrie.
@@ -1462,7 +1917,7 @@ async def search_pedia_cases_fn(symptoms: str, tool_context: ToolContext) -> str
     except Exception as e:
         return f"Erreur lors de la recherche en Pédiatrie: {str(e)}"
 
-search_pedia_cases = FunctionTool(func=search_pedia_cases_fn)// END OF FILE: module_expert/subagents/pediatrie/tools/expert_tools.py
+search_pedia_cases = FunctionTool(func=search_pedia_cases)// END OF FILE: module_expert/subagents/pediatrie/tools/expert_tools.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/pediatrie/tools/knowledge.json
 
@@ -1482,26 +1937,328 @@ from django.test import TestCase
 # Create your tests here.
 // END OF FILE: module_expert/tests.py
 
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/tools/descriptions.py
+
+# ==============================================================================
+# --- AGENT OUTPUT KEYS ---
+# Ces constantes définissent les clés sous lesquelles les réponses des agents
+# sont automatiquement sauvegardées dans l'état (state) de la session.
+# ==============================================================================
+
+# Clé pour le raisonnement de l'expert. Portée "Session" pour persister entre les runners.
+KEY_EXPERT_ANALYSIS = "expert_analysis"
+
+# Clé pour la réponse du patient virtuel.
+KEY_PATIENT_RESPONSE = "patient_response"
+
+# Clé pour le feedback final du tuteur.
+KEY_TUTOR_FEEDBACK = "tutor_feedback"
+
+# Clé pour le nom de l'agent délégué retourné par l'agent racine.
+KEY_ROOT_DELEGATION = "delegated_agent_name"
+
+
+# ==============================================================================
+# --- INSTRUCTIONS DE BASE POUR L'EXPERT ---
+# ==============================================================================
+
+_BASE_INSTRUCTION_STI = (
+    "### RÔLE PÉDAGOGIQUE ###\n"
+    "Tu es un EXPERT MÉDICAL et un SUPERVISEUR PÉDAGOGIQUE extrêmement strict et rigoureux. Ta mission principale est d'identifier les ERREURS, les OUBLIS et les IMPRÉCISIONS dans le raisonnement de l'étudiant.\n\n"
+    
+    "### POSTURE CRITIQUE OBLIGATOIRE ###\n"
+    "1. **Priorité à la détection d'erreurs :** Ton objectif n'est pas d'encourager, mais d'évaluer. Cherche activement les failles dans le processus de l'étudiant.\n"
+    "2. **Ne pas créditer l'aide du patient :** Le patient virtuel est programmé pour être coopératif. Si le patient donne des informations cruciales sans que l'étudiant ne pose la bonne question, tu NE DOIS PAS en créditer l'étudiant. Au contraire, tu dois pénaliser l'étudiant pour ne pas avoir posé la question lui-même. Une bonne réponse obtenue via une mauvaise question est une faute de l'étudiant.\n"
+    "3. **Pénaliser les conseils non médicaux :** Toute suggestion ou question qui n'est pas basée sur une démarche scientifique et diagnostique (ex: 'buvez de l'eau chaude', 'reposez-vous' avant même un diagnostic) est une ERREUR CRITIQUE. Cela doit entraîner des points négatifs significatifs dans la compétence 'Diagnostic' ou 'Traitement'.\n\n"
+
+    "MODE 1 : SUPERVISEUR (Ton rôle par défaut)\n"
+    "- Contexte : L'étudiant (Docteur) discute avec un Patient (Simulé). Tu as accès à la conversation via 'lire_conversation()'.\n"
+    "- Action : Suis la 'PROCÉDURE D'ANALYSE' ci-dessous à chaque tour, en gardant ta posture critique.\n\n"
+    
+    "MODE 2 : CONSULTANT (Activé UNIQUEMENT par le Tuteur)\n"
+    "- Contexte : Le Tuteur Pédagogique te pose une question factuelle.\n"
+    "- Action : Fournis une réponse médicale précise et concise, sans évaluer personne.\n\n"
+    
+    "### PROCÉDURE D'ANALYSE (MODE SUPERVISEUR) ###\n"
+    "1. LECTURE DE LA CONVERSATION : Utilise 'lire_conversation()'.\n"
+    "2. ÉVALUATION CRITIQUE : Évalue la pertinence, la justesse et la précision de la DERNIÈRE intervention de l'étudiant. A-t-il oublié quelque chose ? Sa question est-elle la plus pertinente à ce stade ?\n"
+    "3. RECHERCHE (Si besoin) : Utilise ton outil de recherche (search_...) pour valider des faits.\n"
+    "4. NOTATION SÉVÈRE PAR LOT : Utilise SYSTÉMATIQUEMENT l'outil 'enregistrer_evaluations_multiples'. Tu DOIS lui fournir une chaîne de caractères JSON valide qui est une LISTE d'objets. Chaque objet représente une évaluation pour une compétence.\n"
+    "   - Format OBLIGATOIRE : `[{\"competence\": \"diagnostic\", \"points\": -5, \"feedback\": \"...\"}, {\"competence\": \"traitement\", \"points\": -5, \"feedback\": \"...\"}]`\n"
+    "   - Attribue des points NÉGATIFS pour toute erreur. Fais plusieurs évaluations si l'erreur impacte plusieurs compétences (ex: un mauvais conseil impacte 'diagnostic' ET 'traitement').\n"
+    "   - Attribue des points POSITIFS uniquement pour les actions optimales et attendues.\n\n"
+    
+    "### OUTPUT TEXTUEL FINAL (RAISONNEMENT INTERNE) ###\n"
+    "Après avoir appelé l'outil de notation, génère ton raisonnement d'évaluation. Sois précis sur ce qui était bon ou mauvais.\n"
+    "Exemple POSITIF : \"L'étudiant a posé une question clé sur les antécédents de voyage. J'ai appelé 'enregistrer_evaluations_multiples' avec +5 pour 'anamnèse'.\"\n"
+    "Exemple NÉGATIF : \"L'étudiant a suggéré un remède non médical ('jus de fruit') avant le diagnostic. C'est une erreur sur plusieurs plans. J'ai appelé 'enregistrer_evaluations_multiples' avec une pénalité de -10 pour 'diagnostic' et -5 pour 'traitement'.\""
+)
+
+
+# ==============================================================================
+# CARDIOLOGIE
+# ==============================================================================
+DESC_CARDIOLOGIE = "Superviseur expert spécialisé dans les pathologies cardio-vasculaires."
+
+INSTR_CARDIOLOGIE = (
+    f"Tu es l'Expert Superviseur en Cardiologie.\n"
+    f"{_BASE_INSTRUCTION_STI}\n"
+    
+    "### SPÉCIFICITÉS DU DOMAINE : CARDIOLOGIE ###\n"
+    "- Vigilance absolue sur les signes d'urgence vitale (Douleur thoracique aiguë, dyspnée de novo, palpitations intenses, syncopes). Évalue la rapidité de réaction de l'étudiant et sa capacité à les identifier comme prioritaires.\n"
+    "- Vérifie si l'étudiant recherche systématiquement les facteurs de risque cardiovasculaires (Tabac, Hypertension artérielle, Diabète, Dyslipidémie, Antécédents familiaux de maladies cardiaques précoces) lors de l'anamnèse.\n"
+    "- Valide la pertinence et l'interprétation des examens complémentaires (ECG, Troponine, Échographie cardiaque) demandés par l'étudiant pour confirmer ou exclure un diagnostic cardiaque.\n\n"
+    
+    "### TES OUTILS DISPONIBLES ###\n"
+    "1. lire_conversation(): Lit l'historique du chat.\n"
+    "2. search_cardio_cases(symptoms: str): Recherche des cas cliniques similaires en cardiologie basés sur des symptômes.\n"
+    "3. enregistrer_evaluations_multiples(evaluations_json: str): Outil pour attribuer des notes et feedbacks."
+)
+
+# ==============================================================================
+# DERMATOLOGIE
+# ==============================================================================
+DESC_DERMATOLOGIE = "Superviseur expert spécialisé dans les affections cutanées et vénéréologie."
+
+INSTR_DERMATOLOGIE = (
+    f"Tu es l'Expert Superviseur en Dermatologie.\n"
+    f"{_BASE_INSTRUCTION_STI}\n"
+    
+    "### SPÉCIFICITÉS DU DOMAINE : DERMATOLOGIE ###\n"
+    "- L'inspection visuelle est clé : Évalue si l'étudiant décrit précisément la lésion cutanée (Taille, couleur, forme, relief, bords, localisation, nombre, aspect des squames/croûtes/vésicules).\n"
+    "- Vérifie s'il pose des questions sur l'évolution temporelle (début, progression, variation), les facteurs déclenchants ou aggravants (Soleil, allergies, contact avec produits, traitements topiques), et les antécédents personnels/familiaux de maladies dermatologiques.\n"
+    "- Assure-toi qu'il différencie les pathologies bénignes des urgences dermatologiques (ex: Mélanome suspect, toxidermie sévère, érysipèle, dermohypodermite nécrosante).\n\n"
+    
+    "### TES OUTILS DISPONIBLES ###\n"
+    "1. lire_conversation(): Lit l'historique du chat.\n"
+    "2. search_derma_cases(symptoms: str): Recherche des cas cliniques similaires en dermatologie basés sur des symptômes.\n"
+    "3. enregistrer_evaluations_multiples(evaluations_json: str): Outil pour attribuer des notes et feedbacks."
+)
+
+# ==============================================================================
+# PALUDISME (MALARIA)
+# ==============================================================================
+DESC_MALARIA = "Superviseur expert spécialisé dans la parasitologie et le Paludisme tropical."
+
+INSTR_MALARIA = (
+    f"Tu es l'Expert Superviseur en Paludisme. Ton rôle principal est d'ÉVALUER l'étudiant en médecine.\n"
+    f"{_BASE_INSTRUCTION_STI}\n"
+    
+    "### SPÉCIFICITÉS DU DOMAINE : PALUDISME ###\n"
+    "- Protocole Strict : 'Test before Treat'. L'étudiant DOIT impérativement demander un Test de Diagnostic Rapide (TDR) ou une Goutte Épaisse avant de proposer un traitement antipaludique. S'il ne le fait pas, c'est une erreur CRITIQUE entraînant des points négatifs importants sur le diagnostic et le traitement. Évalue cette conformité avec la plus grande rigueur.\n"
+    "- Recherche de signes de gravité : Convulsions, anémie sévère, prostration, ictère, détresse respiratoire, hypotonie. Évalue si l'étudiant les identifie rapidement, demande des bilans spécifiques, et réagit de manière appropriée à l'urgence.\n"
+    "- Vérifie le dosage des antipaludéens (ACT, Artésunate) selon le poids/âge du patient et le schéma thérapeutique recommandé. Note précisément les erreurs de prescription (molécule, posologie, durée).\n"
+    "- L'anamnèse doit IMPÉRATIVEMENT inclure : Notion de voyage récent en zone d'endémie (et la zone spécifique), utilisation de moustiquaire/prophylaxie, caractère intermittent de la fièvre, et autres symptômes associés (céphalées, vomissements, douleurs musculaires, diarrhée). Évalue l'exhaustivité de l'anamnèse par rapport à ces points clés.\n\n"
+    
+    "### TES OUTILS DISPONIBLES ###\n"
+    "1. lire_conversation(): Lit l'historique du chat.\n"
+    "2. search_similar_cases(symptoms: str): Recherche des cas cliniques similaires pour le paludisme basés sur des symptômes.\n"
+    "3. enregistrer_evaluations_multiples(evaluations_json: str): Outil pour attribuer des notes et feedbacks."
+)
+
+# ==============================================================================
+# PEDIATRIE
+# ==============================================================================
+DESC_PEDIATRIE = "Superviseur expert spécialisé dans la santé de l'enfant et du nourrisson."
+
+INSTR_PEDIATRIE = (
+    f"Tu es l'Expert Superviseur en Pédiatrie.\n"
+    f"{_BASE_INSTRUCTION_STI}\n"
+    
+    "### SPÉCIFICITÉS DU DOMAINE : PÉDIATRIE ###\n"
+    "- L'interaction est souvent triangulaire (Docteur - Parent - Enfant). Évalue la qualité de la communication de l'étudiant avec le parent et sa capacité à établir le contact avec l'enfant de manière appropriée.\n"
+    "- Les dosages médicamenteux doivent être strictement basés sur le POIDS et l'âge de l'enfant. Note toute erreur de calcul ou d'administration comme critique, avec un impact négatif important sur le traitement.\n"
+    "- Vigilance sur : La courbe de croissance (recherche de cassure), l'état vaccinal (à jour ?), les signes de déshydratation (pli cutané, état des muqueuses), et les antécédents périnataux. Vérifie si l'étudiant prend ces éléments en compte de manière proactive dans son interrogatoire et son examen.\n"
+    "- Attention aux signes de gravité qui sont plus subtils chez le nourrisson et le jeune enfant (refus de têter/boire, hypotonie, léthargie, pleurs inconsolables, fontanelle bombée/creuse, teint grisâtre). Évalue la capacité de l'étudiant à les détecter et à réagir appropriée à ces alertes.\n\n"
+    
+    "### TES OUTILS DISPONIBLES ###\n"
+    "1. lire_conversation(): Lit l'historique du chat.\n"
+    "2. search_pedia_cases(symptoms: str): Recherche des cas cliniques similaires en pédiatrie basés sur des symptômes.\n"
+    "3. enregistrer_evaluations_multiples(evaluations_json: str): Outil pour attribuer des notes et feedbacks."
+)// END OF FILE: module_expert/tools/descriptions.py
+
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/tools/domain_tools.py
 
 from google.adk.tools import FunctionTool
+from google.adk.tools import ToolContext
 
-def list_available_domains_fn() -> str:
+async def get_session_domain_fn(tool_context: ToolContext) -> str:
     """
-    Liste tous les domaines médicaux disponibles dans le système pour lesquels un expert existe.
+    Récupère le nom du domaine médical actuellement actif dans la session.
+    Cet outil ne prend aucun paramètre LLM et retourne directement la chaîne du domaine.
+    """
+    print(f"--- ⚙️ TOOL (get_session_domain): Lecture du domaine depuis le state: {tool_context.state.get('domaine', 'Inconnu')} ---")
+    return tool_context.state.get("domaine", "Domaine_Non_Defini_Dans_Session")
+
+get_session_domain = FunctionTool(func=get_session_domain_fn)// END OF FILE: module_expert/tools/domain_tools.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/tools/lire_conversation.py
+
+from google.adk.tools.tool_context import ToolContext
+
+def lire_conversation(tool_context: ToolContext) -> str:
+    """
+    Lit l'historique des conversations depuis le state de la session
+    et le retourne sous forme de transcript formaté.
     
-    Returns:
-        Une liste des noms de domaines (ex: "Paludisme", "Cardiologie").
-    """
-    from module_expert.models import DomaineMedical
-    try:
-        domaines = DomaineMedical.objects.values_list('nom', flat=True)
-        return list(domaines)
-    except Exception:
-        return []
+    Cet outil est utilisé par les agents (Patient, Expert, Tuteur) pour
+    comprendre le contexte actuel de la discussion avant de prendre une décision.
 
-list_available_domains = FunctionTool(func=list_available_domains_fn)
-// END OF FILE: module_expert/tools/domain_tools.py
+    Args:
+        tool_context (ToolContext): Le contexte de l'outil, contenant l'état de la session.
+
+    Returns:
+        str: Un résumé formaté des derniers échanges de la conversation,
+             ou un message d'indication si l'historique est vide.
+    """
+    print("--- 📚 Outil (lire_conversation): Lecture de l'historique ---")
+
+    # 1. Récupération de l'historique depuis le state
+    # L'historique est géré par l'Orchestrateur, cet outil ne fait que le lire.
+    history = tool_context.state.get("history", [])
+
+    # 2. Cas où l'historique est (anormalement) vide à ce stade.
+    # Dans le flux normal, l'orchestrateur aura déjà ajouté le premier message.
+    if not history:
+        return "L'historique de conversation est actuellement vide. L'agent ne dispose pas de contexte."
+
+    # 3. Construction du Contexte Conversationnel
+    # On prend les derniers échanges pour fournir un contexte pertinent sans surcharger le LLM.
+    # Ajuste le nombre (ex: -6, -8, -10) selon la profondeur de mémoire souhaitée pour l'agent.
+    contexte_window = history[-8:] # Inclut les 8 derniers messages
+
+    formatted_dialogue = "Voici les derniers échanges de la consultation :\n"
+    
+    for i, echange in enumerate(contexte_window):
+        # Assurez-vous que 'person' est "doctor" ou "patient"
+        role_label = "PATIENT" if echange.get("person") == "patient" else "DOCTEUR (Étudiant)"
+        message_content = echange.get("message", "[Message vide]")
+        formatted_dialogue += f"[{i+1}] - {role_label} : {message_content}\n"
+        
+    # 4. Directive pour l'agent (pourquoi il a lu l'historique)
+    formatted_dialogue += "\nAnalyse attentivement ce dialogue. Détermine ta prochaine action ou réponse en fonction de ce contexte."
+
+    return formatted_dialogue// END OF FILE: module_expert/tools/lire_conversation.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/tools/scoring_tools.py
+
+import json
+from google.adk.tools import ToolContext
+from asgiref.sync import sync_to_async
+from django.core.exceptions import ObjectDoesNotExist
+
+from module_apprenant.models import Apprenant, NiveauCompetence, ProfilEtudiant
+from module_expert.models import DomaineMedical
+
+async def enregistrer_evaluations_multiples(evaluations_json: str, tool_context: ToolContext) -> str:
+    """
+    Met à jour PLUSIEURS compétences de l'étudiant en un seul appel.
+    
+    Args:
+        evaluations_json (str): Une chaîne de caractères JSON représentant une liste d'évaluations.
+                               Exemple: '[{"competence": "diagnostic", "points": -5, "feedback": "Erreur majeure."}]'
+        tool_context (ToolContext): Le contexte de l'agent fourni par l'ADK.
+    """
+    # --- ÉTAPE DE DÉBOGAGE CRUCIALE ---
+    print("--- 🎓 TOOL (enregistrer_evaluations_multiples): Données reçues ---")
+    print(evaluations_json)
+    print("---------------------------------------------------------------")
+    
+    # --- FIABILISATION DE L'ENTRÉE ---
+    if not isinstance(evaluations_json, str) or not evaluations_json.strip().startswith('['):
+        error_msg = f"Erreur : L'entrée n'est pas une chaîne de caractères JSON représentant une liste. Reçu : {type(evaluations_json)}"
+        print(error_msg)
+        return error_msg
+
+    try:
+        evaluations = json.loads(evaluations_json)
+        if not isinstance(evaluations, list):
+            return "Erreur : le JSON fourni n'est pas une liste."
+    except json.JSONDecodeError as e:
+        error_msg = f"Erreur : La chaîne de caractères fournie n'est pas un JSON valide. Erreur : {e}"
+        print(error_msg)
+        return error_msg
+
+    user_id = tool_context.state.get("user_id")
+    domaine_nom = tool_context.state.get("domaine")
+
+    if not user_id or not domaine_nom:
+        return "Erreur système : user_id ou domaine manquant dans le state."
+
+    # ... (Le reste de la fonction reste identique)
+    @sync_to_async
+    def update_database_sync():
+        try:
+            apprenant = Apprenant.objects.get(id=user_id)
+            profil, _ = ProfilEtudiant.objects.get_or_create(apprenant=apprenant)
+            domaine_obj = DomaineMedical.objects.get(nom__iexact=domaine_nom)
+            niveau_comp, _ = NiveauCompetence.objects.get_or_create(profil_etudiant=profil, domaine=domaine_obj)
+
+            total_points_gagnes = 0
+            
+            for eval_item in evaluations:
+                competence = eval_item.get("competence")
+                points = eval_item.get("points", 0)
+                feedback = eval_item.get("feedback")
+                
+                if not all([competence, isinstance(points, int), feedback]):
+                    print(f"  -> Skipping invalid evaluation item: {eval_item}")
+                    continue # Ignore les items mal formés dans la liste
+                
+                total_points_gagnes += points
+
+                if competence == "anamnese":
+                    niveau_comp.score_anamnese += points
+                elif competence == "diagnostic":
+                    niveau_comp.score_diagnostic += points
+                elif competence == "traitement":
+                    niveau_comp.score_traitement += points
+                elif competence == "relationnel":
+                    niveau_comp.score_relationnel += points
+                
+                if points < 0:
+                    if not isinstance(profil.lacunes_identifiees, list):
+                        profil.lacunes_identifiees = []
+                    profil.lacunes_identifiees.append({"domaine": domaine_nom, "feedback": feedback, "competence": competence})
+            
+            profil.xp_total += total_points_gagnes
+            profil.save()
+            niveau_comp.save()
+
+            return {"success": True, "new_xp": profil.xp_total, "updated_competences": {
+                "anamnese": niveau_comp.score_anamnese, "diagnostic": niveau_comp.score_diagnostic,
+                "traitement": niveau_comp.score_traitement, "relationnel": niveau_comp.score_relationnel
+            }}
+
+        except ObjectDoesNotExist as e:
+            return {"success": False, "error": f"Donnée introuvable en base : {str(e)}"}
+        except Exception as e:
+            return {"success": False, "error": f"Erreur DB inconnue : {str(e)}"}
+
+    db_result = await update_database_sync()
+
+    if not db_result["success"]:
+        return f"Échec de l'enregistrement en base de données : {db_result['error']}"
+
+    state_profile = tool_context.state.get("student_profile", {})
+    state_profile["score_global"] = db_result["new_xp"]
+    state_profile["competences"] = db_result["updated_competences"]
+    
+    if "feedbacks" not in state_profile:
+        state_profile["feedbacks"] = []
+        
+    for eval_item in evaluations:
+        if eval_item.get("competence"): # N'ajoute pas de feedback si l'item était invalide
+            state_profile["feedbacks"].append({
+                "competence": eval_item.get("competence"),
+                "points": eval_item.get("points"),
+                "message": eval_item.get("feedback"),
+                "timestamp": "Now"
+            })
+
+    tool_context.state["student_profile"] = state_profile
+
+    return f"✅ {len(evaluations)} évaluations traitées. XP Global: {db_result['new_xp']}."// END OF FILE: module_expert/tools/scoring_tools.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/urls.py
 
@@ -1588,7 +2345,7 @@ class ModuleInterfaceConfig(AppConfig):
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/migrations/0001_initial.py
 
-# Generated by Django 6.0 on 2025-12-10 15:25
+# Generated by Django 6.0 on 2025-12-27 14:01
 
 import django.db.models.deletion
 import uuid
@@ -1799,298 +2556,53 @@ from django.contrib import admin
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/agent.py
 
-import json
-import asyncio
-from asgiref.sync import sync_to_async
-from google.adk.runners import Runner
-from google.genai.types import Content, Part
-from google.adk.sessions import DatabaseSessionService
+from google.adk.agents import Agent
+from module_expert.constante import MODEL_NAME
 
-# AJOUT DES IMPORTS POUR LA SAUVEGARDE ADK (Event, EventActions)
-from google.adk.events import Event, EventActions
+# Imports des outils
+from module_expert.tools.descriptions import KEY_TUTOR_FEEDBACK
+from module_tuteur.tools.introspection_tools import lire_profil_etudiant, lire_analyse_expert # <--- MODIFICATION
+from module_tuteur.tools.expert_interface import consulter_expert_medical
+from module_expert.tools.lire_conversation import lire_conversation
 
-# Imports internes des modèles et agents Django
-from config.adk_session import db_url # On importe uniquement l'URL de la base de données
-from module_expert.agent import expert_app # L'application ADK de l'expert
-from module_expert.models import CasClinique, DomaineMedical
-from module_apprenant.models import Apprenant, ProfilEtudiant, NiveauCompetence
-from module_interface.models import SessionApprentissage, Interaction
-from .strategies import StrategieSocratique, StrategieDirecte, StrategieScaffolding
 
-class TuteurIA:
-    """
-    Orchestrateur principal du système de Tuteur Intelligent (STI).
-    Gère le déroulement de la session d'apprentissage, interagit avec l'Agent Expert,
-    met à jour le profil de l'apprenant et adapte la stratégie pédagogique.
-    """
+# <--- MODIFICATION MAJEURE DE LA STRATÉGIE DU TUTEUR ---
+tuteur_instruction = (
+    "Tu es un TUTEUR PÉDAGOGIQUE INTELLIGENT.\n"
+    "Tu accompagnes un étudiant en médecine qui diagnostique un patient virtuel.\n\n"
     
-    def __init__(self):
-        self.strategies = {
-            'SOCRATIQUE': StrategieSocratique(),
-            'DIRECT': StrategieDirecte(),
-            'SCAFFOLDING': StrategieScaffolding()
-        }
+    "### TA MISSION ###\n"
+    "Analyser la situation après chaque échange et décider SI et COMMENT intervenir.\n"
+    "À chaque fin d'analyse, tu DOIS fournir un FEEDBACK TEXTUEL à l'étudiant. "
+    "Même si tout va bien, donne un encouragement concis.\n\n"
+    
+    "### PROCESSUS DE DÉCISION OBLIGATOIRE ###\n"
+    "1. LECTURE DU DIALOGUE : Utilise 'lire_conversation()' pour voir le dernier échange Docteur-Patient.\n"
+    "2. LECTURE DU PROFIL : Utilise 'lire_profil_etudiant()' pour voir si les notes de l'étudiant ont évolué.\n"
+    "3. LECTURE DE L'ANALYSE EXPERT : Utilise 'lire_analyse_expert()' pour comprendre le POURQUOI des changements de notes. C'est l'information la plus importante pour ton feedback.\n"
+    "4. STRATÉGIE ET FEEDBACK TEXTUEL (OBLIGATOIRE) :\n"
+    "   - En te basant sur l'analyse de l'expert, détermine la meilleure approche.\n"
+    "   - CAS A (Analyse positive) : Donne un encouragement concis (ex: 'Bien joué, l'expert a validé votre approche. Continuez !').\n"
+    "   - CAS B (Analyse mitigée/Oubli) : Adopte une stratégie SOCRATIQUE. Pose une question qui guide sans donner la réponse (ex: 'L'expert note qu'un antécédent a été oublié. À quoi d'autre pourriez-vous penser ?').\n"
+    "   - CAS C (Analyse négative/Erreur) : Adopte une stratégie DIRECTIVE. Corrige l'erreur de manière claire (ex: 'Attention, l'expert indique que ce dosage est incorrect. Le protocole recommande...').\n"
+    "   - CAS D (Blocage) : Si l'étudiant est bloqué, utilise 'consulter_expert_medical' pour demander un indice technique, puis reformule-le.\n\n"
+    
+    "Ton feedback doit être clair, constructif et toujours présent. Ton output textuel final sera le feedback pour l'étudiant."
+)
 
-    # --- MÉTHODE CRUCIALE POUR GÉRER LE SERVICE DE SESSION ADK ---
-    async def _get_session_service(self):
-        """
-        Crée une nouvelle instance du DatabaseSessionService de l'ADK pour la requête courante.
-        Ceci est essentiel pour éviter les conflits de boucles d'événements
-        lorsque l'application Django (asynchrone) interagit avec SQLAlchemy/asyncpg.
-        """
-        # On importe DatabaseSessionService ici pour s'assurer qu'il est créé dans le bon contexte
-        from google.adk.sessions import DatabaseSessionService
-        return DatabaseSessionService(db_url=db_url)
-
-    async def demarrer_session_async(self, apprenant_email: str, domaine_nom: str):
-        """
-        Démarre une nouvelle session d'apprentissage pour un apprenant et un domaine donnés.
-        Initialise à la fois la session Django et la session ADK associée.
-        """
-        try:
-            # 1. Récupération des objets Django (Apprenant, Domaine, Cas Clinique)
-            apprenant = await Apprenant.objects.aget(email=apprenant_email)
-            domaine = await DomaineMedical.objects.aget(nom__iexact=domaine_nom)
-            
-            # Sélection d'un cas clinique pertinent (logique simple ici, pourrait être plus complexe)
-            cas = await CasClinique.objects.filter(
-                domaine=domaine, 
-                statut=CasClinique.StatutCas.PUBLIE
-            ).afirst()
-            
-            if not cas:
-                return None, f"Aucun cas clinique 'PUBLIE' disponible pour le domaine '{domaine_nom}'."
-
-            # Création de la session Django (persistance de l'historique métier)
-            session_django = await SessionApprentissage.objects.acreate(
-                apprenant=apprenant,
-                cas_clinique=cas
-            )
-
-            # 2. Création de la session ADK (persistance de l'état de l'agent)
-            # Le service est créé localement pour cette requête
-            adk_session_service = await self._get_session_service()
-
-            await adk_session_service.create_session(
-                app_name=expert_app.name, # Nom de l'application ADK de l'expert
-                user_id=str(apprenant.id),
-                session_id=str(session_django.id), # Lier la session ADK à la session Django
-                state={
-                    # État initial pour le "scratchpad" de l'agent ADK
-                    "etape_courante": "Anamnèse",
-                    "erreurs_consecutives": 0,
-                    "cas_context": cas.donnees_patient # Charger le contexte du cas clinique
-                }
-            )
-
-            return session_django, f"Session démarrée sur le cas : {cas.titre}"
-
-        except Apprenant.DoesNotExist:
-            return None, f"Apprenant avec l'email '{apprenant_email}' non trouvé."
-        except DomaineMedical.DoesNotExist:
-            return None, f"Domaine médical '{domaine_nom}' non trouvé."
-        except Exception as e:
-            # En cas d'erreur inattendue, afficher la trace complète pour le débogage
-            import traceback
-            traceback.print_exc()
-            return None, f"Erreur lors du démarrage de la session: {str(e)}"
-
-    async def analyser_reponse_async(self, session_id: str, reponse_etudiant: str, etape_actuelle: str):
-        """
-        Analyse la réponse de l'apprenant, consulte l'expert IA, met à jour le profil,
-        et génère un feedback pédagogique.
-        """
-        try:
-            # 1. Récupérer la session Django et les objets liés avec `select_related`
-            # Ceci permet d'éviter les requêtes synchrones bloquantes sur les Foreign Keys
-            session_django = await SessionApprentissage.objects.select_related(
-                'cas_clinique__domaine', # Charge le cas clinique et son domaine associé
-                'apprenant'              # Charge l'apprenant associé
-            ).aget(id=session_id)
-            
-            # Accès direct aux objets déjà chargés
-            cas = session_django.cas_clinique
-            apprenant = session_django.apprenant
-            domaine = cas.domaine  
-            
-            # Récupérer le profil de l'apprenant pour la mise à jour XP/compétences
-            profil = await ProfilEtudiant.objects.aget(apprenant=apprenant)
-
-            # 2. Préparer le Runner ADK avec un service de session LOCAL
-            adk_session_service = await self._get_session_service()
-
-            runner = Runner(
-                agent=expert_app.root_agent,
-                app_name=expert_app.name,
-                session_service=adk_session_service # Utiliser l'instance locale du service
-            )
-
-            # 3. Construire le prompt pour l'Agent Expert
-            # On demande un format JSON spécifique pour faciliter le parsing
-            prompt_content = (
-                f"CONTEXTE DU CAS: '{cas.titre}'.\n"
-                f"DONNÉES PATIENT: {cas.donnees_patient}.\n"
-                f"HISTORIQUE MÉDICAL: {cas.historique_medical}.\n"
-                f"SOLUTION EXPERTE ATTENDUE: '{cas.solution_experte}'.\n"
-                f"L'ÉTUDIANT PROPOSE (étape '{etape_actuelle}'): '{reponse_etudiant}'.\n\n"
-                "TACHE: Évalue la réponse de l'étudiant. Est-elle correcte médicalement par rapport à la solution experte ?\n"
-                "Si non, quelles sont les erreurs principales détectées ?\n"
-                "FORMAT DE SORTIE ATTENDU (JSON uniquement): "
-                "{ \"correct\": boolean, \"raison\": \"string\", \"erreurs_detectees\": [\"string\"] }"
-            )
-            
-            user_message = Content(parts=[Part(text=prompt_content)])
-
-            # 4. Exécuter l'Agent Expert via le Runner ADK
-            expert_response_text = ""
-            async for event in runner.run_async(
-                user_id=str(apprenant.id),
-                session_id=str(session_id),
-                new_message=user_message
-            ):
-                if event.is_final_response() and event.content:
-                    expert_response_text = event.content.parts[0].text
-
-            # 5. Parsing de la réponse JSON de l'Expert
-            try:
-                # Nettoyage pour retirer les blocs de code Markdown (```json...```)
-                clean_json = expert_response_text.replace('```json', '').replace('```', '').strip()
-                resultat_expert = json.loads(clean_json)
-                est_correct = resultat_expert.get('correct', False)
-                raison_expert = resultat_expert.get('raison', 'Analyse non disponible.')
-                erreurs_expert = resultat_expert.get('erreurs_detectees', [])
-            except json.JSONDecodeError:
-                # Fallback si l'IA ne répond pas en JSON valide
-                est_correct = False
-                raison_expert = "L'expert n'a pas pu évaluer la réponse (format invalide)."
-                erreurs_expert = [expert_response_text] # Mettre la réponse brute comme erreur
-            except Exception as e:
-                est_correct = False
-                raison_expert = f"Erreur interne lors du traitement de la réponse de l'expert: {str(e)}"
-                erreurs_expert = []
-
-            # 6. Mise à jour de l'état de la session ADK (persistance des erreurs consécutives)
-            # Récupérer l'état actuel de la session ADK
-            session_adk = await adk_session_service.get_session(
-                app_name=expert_app.name, 
-                user_id=str(apprenant.id), 
-                session_id=str(session_id)
-            )
-            
-            current_errors = session_adk.state.get("erreurs_consecutives", 0)
-            
-            if not est_correct:
-                new_errors = current_errors + 1
-            else:
-                new_errors = 0 # Réinitialiser les erreurs si la réponse est correcte
-
-            # Créer un événement ADK pour persister la mise à jour de l'état dans la base de données
-            state_update_event = Event(
-                author="system", # L'auteur de cet événement est le système de tutorat
-                actions=EventActions(state_delta={"erreurs_consecutives": new_errors})
-            )
-            await adk_session_service.append_event(session_adk, state_update_event)
-
-            # 7. Mise à jour du profil de l'apprenant dans Django (XP, Compétences, Lacunes)
-            await self._update_competence_django(profil, domaine, est_correct, erreurs_expert) 
-            
-            # 8. Choix de la stratégie pédagogique en fonction du résultat et des erreurs passées
-            strategie = self._choisir_strategie(est_correct, new_errors)
-            
-            if est_correct:
-                feedback = f"Bien joué ! {raison_expert}"
-            else:
-                # Utilise la stratégie choisie pour générer un indice
-                feedback = strategie.generer_indice(cas.donnees_patient, etape_actuelle)
-
-            # 9. Enregistrement de l'interaction dans la base de données Django
-            await Interaction.objects.acreate(
-                session=session_django,
-                question_contenu=f"Étape: {etape_actuelle}",
-                reponse_contenu=reponse_etudiant,
-                reponse_est_valide=est_correct,
-                feedback_contenu=feedback,
-                feedback_type=strategie.style_feedback()
-            )
-
-            # Retourner le résultat à l'interface utilisateur
-            return {
-                "valide": est_correct,
-                "feedback": feedback,
-                "expert_raw": raison_expert
-            }
-
-        except SessionApprentissage.DoesNotExist:
-            return {"error": f"Session Django avec l'ID '{session_id}' introuvable."}
-        except Exception as e:
-            import traceback
-            traceback.print_exc()
-            return {"error": f"Erreur interne du tuteur: {str(e)}"}
-
-    @sync_to_async
-    def _update_competence_django(self, profil: ProfilEtudiant, domaine: DomaineMedical, est_correct: bool, erreurs_expert: list):
-        """
-        Met à jour les scores de compétences (NiveauCompetence) et le profil global (ProfilEtudiant)
-        de l'apprenant. Cette fonction s'exécute de manière synchrone.
-        """
-        # Mise à jour du NiveauCompetence pour le domaine spécifique
-        comp, _ = NiveauCompetence.objects.get_or_create(
-            profil_etudiant=profil,
-            domaine=domaine,
-            defaults={'niveau_actuel': 'DEBUTANT', 'score_diagnostic': 0.0, 'score_raisonnement': 0.0}
-        )
-        
-        if est_correct:
-            comp.score_diagnostic += 5
-        else:
-            comp.score_diagnostic = max(0, comp.score_diagnostic - 2) # Empêche le score de devenir négatif
-        
-        # Logique simplifiée de progression de niveau
-        if comp.score_diagnostic > 80:
-            comp.niveau_actuel = 'EXPERT'
-        elif comp.score_diagnostic > 50:
-            comp.niveau_actuel = 'AVANCE'
-        elif comp.score_diagnostic > 20:
-            comp.niveau_actuel = 'INTERMEDIAIRE'
-        else:
-            comp.niveau_actuel = 'DEBUTANT'
-             
-        comp.save()
-
-        # Mise à jour du ProfilEtudiant (XP total et lacunes)
-        if est_correct:
-            profil.xp_total += 10 # Gagner plus d'XP pour une bonne réponse
-        
-        # Enregistrer les lacunes si la réponse est incorrecte et que l'expert a identifié des erreurs
-        if not est_correct and erreurs_expert:
-            current_lacunes_list = json.loads(profil.lacunes_identifiees or "[]")
-            for erreur in erreurs_expert:
-                if erreur not in current_lacunes_list: # Évite les doublons
-                    current_lacunes_list.append(erreur)
-            profil.lacunes_identifiees = json.dumps(current_lacunes_list)
-        elif est_correct:
-            # Si l'apprenant réussit, on peut envisager de "résoudre" des lacunes
-            # Pour l'instant, on ne fait rien de sophistiqué ici, les lacunes persistent jusqu'à une gestion explicite
-            pass 
-
-        profil.save() # Sauvegarde toutes les modifications du profil
-
-    def _choisir_strategie(self, est_correct: bool, nb_erreurs_consecutives: int):
-        """
-        Choisit la stratégie pédagogique (Socratique, Directe, Scaffolding)
-        en fonction du résultat de la dernière réponse et du nombre d'erreurs consécutives.
-        """
-        if est_correct:
-            return self.strategies['SOCRATIQUE'] # Si correct, on encourage à la réflexion
-        
-        # Si plusieurs erreurs, on devient plus directif
-        if nb_erreurs_consecutives >= 2:
-            return self.strategies['DIRECT'] 
-        else:
-            return self.strategies['SCAFFOLDING'] # Aide progressive
-
-# Instance unique du TuteurIA, car elle est stateless (l'état est dans ADK Session et Django DB)
-tuteur_service = TuteurIA()// END OF FILE: module_tuteur/agent.py
+tuteur_agent = Agent(
+    name="Tuteur_Intelligent",
+    model=MODEL_NAME,
+    description="Orchestre la pédagogie et fournit des feedbacks.",
+    instruction=tuteur_instruction,
+    tools=[
+        lire_conversation,
+        lire_profil_etudiant,
+        lire_analyse_expert, # <--- AJOUT DU NOUVEL OUTIL
+        consulter_expert_medical
+    ],
+    output_key=KEY_TUTOR_FEEDBACK # Garde cette clé pour la sortie finale
+)// END OF FILE: module_tuteur/agent.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/apps.py
 
@@ -2122,6 +2634,142 @@ from django.db import models
 # Create your models here.
 // END OF FILE: module_tuteur/models.py
 
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/orchestrator.py
+
+import asyncio
+from google.adk.runners import Runner
+from google.adk.sessions import DatabaseSessionService, Session
+from google.adk.events import Event, EventActions
+from google.genai.types import Content, Part
+
+# Imports des Agents
+from module_expert.subagents.patient.agent import patient_agent
+from module_tuteur.agent import tuteur_agent
+
+# Imports des sous-agents experts spécifiques pour la délégation
+from module_expert.subagents import (
+    malaria_expert,
+    cardiologie_expert,
+    pediatrie_expert,
+    dermatologie_expert
+)
+
+class TuteurOrchestrator:
+    
+    def __init__(self):
+        self.expert_sub_agents = { 
+            "Paludisme": malaria_expert,
+            "Cardiologie": cardiologie_expert,
+            "Dermatologie": dermatologie_expert,
+            "Pédiatrie": pediatrie_expert,
+        }
+
+    async def get_session_details(self, session_id: str, user_id: str, session_service: DatabaseSessionService):
+        if not user_id:
+            return None
+        session = await session_service.get_session(
+            app_name="sti_app", session_id=session_id, user_id=user_id
+        )
+        return session.state if session else None
+
+    async def traiter_interaction(self, user_id: str, session_id: str, message_etudiant: str, session_service: DatabaseSessionService):
+        print(f"\n🚀 DÉBUT INTERACTION (Session {session_id} - User {user_id})")
+
+        # -------------------------------------------------------------
+        # ÉTAPE A : AGENT PATIENT (Génération de la réponse)
+        # -------------------------------------------------------------
+        print("🏥 A. Le patient réfléchit et répond...")
+        runner_patient = Runner(agent=patient_agent, app_name="sti_app", session_service=session_service)
+        
+        reponse_patient_text = "Le patient n'a pas pu formuler de réponse."
+        async for event in runner_patient.run_async(user_id=user_id, session_id=session_id, new_message=Content(parts=[Part(text=message_etudiant)])):
+            if event.is_final_response() and event.content and event.content.parts:
+                reponse_patient_text = event.content.parts[0].text.strip('" ') # Nettoyage des guillemets
+                break
+        
+        print(f"   💬 Réponse du patient générée : '{reponse_patient_text}'")
+
+        # -------------------------------------------------------------
+        # ÉTAPE B : MISE À JOUR DE L'HISTORIQUE
+        # -------------------------------------------------------------
+        print("💾 B. Persistance de l'échange dans l'historique...")
+        state_before_update = await self.get_session_details(session_id, user_id, session_service)
+        if not state_before_update:
+             return {"error": "Impossible de récupérer la session pour mettre à jour l'historique."}
+
+        current_history = state_before_update.get('history', [])
+        current_history.append({"person": "doctor", "message": message_etudiant})
+        current_history.append({"person": "patient", "message": reponse_patient_text})
+        
+        history_delta = {'history': current_history}
+        history_update_event = Event(author="orchestrator", actions=EventActions(state_delta=history_delta))
+        
+        session_obj = await session_service.get_session(app_name="sti_app", session_id=session_id, user_id=user_id)
+        await session_service.append_event(session_obj, history_update_event)
+
+
+        await asyncio.sleep(0.2)
+
+        # -------------------------------------------------------------
+        # ÉTAPE B.1 : NETTOYAGE DE L'ANALYSE PRÉCÉDENTE (CORRECTION)
+        # -------------------------------------------------------------
+        print("🧹 B.1. Nettoyage de l'état d'analyse...")
+        cleanup_delta = {'expert_analysis': 'Analyse en attente...'}
+        cleanup_event = Event(author="orchestrator", actions=EventActions(state_delta=cleanup_delta))
+        await session_service.append_event(session_obj, cleanup_event)
+        
+        # -------------------------------------------------------------
+        # ÉTAPE C : ROUTAGE SANS IA
+        # -------------------------------------------------------------
+        print("🎓 C. Routage de l'expert (logique Python)...")
+        domaine_nom = state_before_update.get("domaine")
+        specific_expert_agent = self.expert_sub_agents.get(domaine_nom)
+        
+        # -------------------------------------------------------------
+        # ÉTAPE D : SOUS-AGENT EXPERT SPÉCIFIQUE
+        # -------------------------------------------------------------
+        if specific_expert_agent:
+            agent_name = specific_expert_agent.name
+            print(f"🎓 D. Exécution de l'expert : {agent_name}...")
+            runner_specific_expert = Runner(agent=specific_expert_agent, app_name="sti_app", session_service=session_service)
+            async for _ in runner_specific_expert.run_async(user_id=user_id, session_id=session_id, new_message=Content(parts=[Part(text="Analyse le dernier échange.")])):
+                pass
+        else:
+            print(f"❌ Erreur de routage pour le domaine '{domaine_nom}'.")
+
+        # -------------------------------------------------------------
+        # ÉTAPE E : AGENT TUTEUR
+        # -------------------------------------------------------------
+        print("🧠 E. Le tuteur décide du feedback...")
+        runner_tuteur = Runner(agent=tuteur_agent, app_name="sti_app", session_service=session_service)
+        async for _ in runner_tuteur.run_async(user_id=user_id, session_id=session_id, new_message=Content(parts=[Part(text="Analyse la situation.")])):
+            pass
+
+        # -------------------------------------------------------------
+        # ÉTAPE F : CONSTRUCTION DE LA RÉPONSE FINALE
+        # -------------------------------------------------------------
+        final_session_state = await self.get_session_details(session_id, user_id, session_service)
+        if not final_session_state:
+            return {"error": "Session introuvable à la fin du traitement."}
+
+        chat_history = final_session_state.get("history", [])
+        tutor_feedback = final_session_state.get("tutor_feedback", "Le tuteur n'a pas donné de feedback.")
+        
+        return {
+            "status": "success",
+            "latest_exchange": {"patient": reponse_patient_text, "tutor": tutor_feedback},
+            "chat_history": chat_history,
+            "internal_reasoning": {
+                # On lit la clé corrigée, sans le préfixe "temp:"
+                "expert_analysis": final_session_state.get("expert_analysis", "N/A"), 
+                "logs_history": final_session_state.get("internal_logs", [])
+            },
+            "student_profile": final_session_state.get("student_profile", {})
+        }
+
+# Singleton
+orchestrator = TuteurOrchestrator()// END OF FILE: module_tuteur/orchestrator.py
+
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/serializers.py
 
 from rest_framework import serializers
@@ -2137,7 +2785,81 @@ class AnalyseReponseSerializer(serializers.Serializer):
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/services.py
 
-// END OF FILE: module_tuteur/services.py
+import uuid
+from asgiref.sync import sync_to_async
+from google.adk.sessions import DatabaseSessionService
+# config.adk_session n'est plus nécessaire ici
+from module_expert.agent import expert_app 
+
+# Imports Django
+from module_apprenant.models import Apprenant, ProfilEtudiant
+from module_expert.models import DomaineMedical, CasClinique
+from module_interface.models import SessionApprentissage
+
+class SessionManager:
+    # <--- SUPPRESSION DE LA GESTION D'INSTANCE SINGLETON ---
+    # _adk_service_instance: DatabaseSessionService = None
+    # async def _get_adk_service(self) ...
+
+    # <--- MODIFICATION DE LA SIGNATURE DE LA MÉTHODE ---
+    async def demarrer_session(self, email_apprenant: str, domaine_nom: str, session_service: DatabaseSessionService):
+        try:
+            # 1. Vérifications Django (Apprenant & Domaine)
+            try:
+                apprenant = await Apprenant.objects.aget(email=email_apprenant)
+                profil, _ = await ProfilEtudiant.objects.aget_or_create(apprenant=apprenant)
+                domaine = await DomaineMedical.objects.aget(nom__iexact=domaine_nom)
+            except (Apprenant.DoesNotExist, DomaineMedical.DoesNotExist):
+                return None, "Apprenant ou Domaine introuvable."
+
+            # 2. Sélection d'un cas clinique
+            cas = await CasClinique.objects.filter(
+                domaine=domaine, 
+                statut=CasClinique.StatutCas.PUBLIE
+            ).afirst()
+            
+            if not cas:
+                return None, f"Aucun cas disponible pour {domaine_nom}."
+
+            # 3. Création Session Django (Métier)
+            session_django = await SessionApprentissage.objects.acreate(
+                apprenant=apprenant,
+                cas_clinique=cas
+            )
+            
+            # 4. Création Session ADK (Mémoire Agents)
+            # adk_service = await self._get_adk_service() # <--- SUPPRIMÉ
+            initial_patient_greeting = "Bonjour Docteur, je ne me sens pas très bien."
+            
+            # On utilise l'instance passée en argument
+            await session_service.create_session(
+                app_name="sti_app", 
+                user_id=str(apprenant.id),
+                session_id=str(session_django.id),
+                state={
+                    "domaine": domaine.nom,       
+                    "cas_context": cas.donnees_patient,
+                    "history": [{"id": 1, "person": "patient", "message": initial_patient_greeting}],                
+                    "user_id": str(apprenant.id),
+                    "user:email": apprenant.email,
+                    "student_profile": {
+                        "score_global": profil.xp_total,
+                        "competences": {},
+                        "feedbacks": [],
+                        "lacunes": profil.lacunes_identifiees
+                    },
+                    "internal_logs": [],
+                    "temp:expert_analysis": "Aucune analyse pour le moment."
+                }
+            )
+
+            return session_django, f"Session démarrée sur le cas : {cas.titre}"
+
+        except Exception as e:
+            return None, f"Erreur démarrage: {str(e)}"
+
+# Instance singleton
+session_manager = SessionManager()// END OF FILE: module_tuteur/services.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/strategies.py
 
@@ -2217,10 +2939,106 @@ from django.test import TestCase
 # Create your tests here.
 // END OF FILE: module_tuteur/tests.py
 
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/tools/expert_interface.py
+
+from google.adk.tools import ToolContext
+from google.adk.runners import Runner
+# On importe l'agent racine Expert
+from module_expert.agent import root_agent 
+
+async def consulter_expert_medical(question: str, tool_context: ToolContext) -> str:
+    """
+    Pose une question technique à l'Expert Médical pour obtenir de l'aide ou un indice.
+    L'Expert répondra en 'Mode Consultant' (sans noter).
+    
+    Exemple: "Quels sont les symptômes clés que l'étudiant a oubliés ?"
+    """
+    print(f"--- 🤝 TUTEUR: Demande d'aide à l'Expert : '{question}' ---")
+    
+    # On lance un runner "one-shot" juste pour cette question
+    # On ne passe pas de session_id pour ne pas interférer avec la session principale
+    runner = Runner(agent=root_agent)
+    
+    domaine = tool_context.state.get("domaine", "Général")
+    # On force le prompt pour activer le mode consultant
+    full_query = f"[MODE CONSULTANT - Domaine: {domaine}] {question}"
+
+    result = await runner.run_async(query=full_query)
+    
+    return result.final_response.content// END OF FILE: module_tuteur/tools/expert_interface.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/tools/introspection_tools.py
+
+import json
+from google.adk.tools import ToolContext
+from asgiref.sync import sync_to_async
+from module_apprenant.models import Apprenant, ProfilEtudiant, NiveauCompetence
+
+async def lire_profil_etudiant(tool_context: ToolContext) -> str:
+    """
+    Récupère les statistiques, le niveau et les lacunes récentes de l'étudiant.
+    À utiliser pour décider si l'étudiant a besoin d'aide ou non.
+    """
+    # ... (code existant, pas de changement)
+    print("--- 📊 TUTEUR: Lecture du profil étudiant ---")
+    user_id = tool_context.state.get("user_id")
+    domaine_nom = tool_context.state.get("domaine")
+
+    if not user_id:
+        return "Erreur: ID étudiant manquant."
+
+    def get_data_sync():
+        try:
+            apprenant = Apprenant.objects.get(id=user_id)
+            profil = ProfilEtudiant.objects.get(apprenant=apprenant)
+            
+            # On cherche les compétences du domaine actuel
+            comp = NiveauCompetence.objects.filter(
+                profil_etudiant=profil, 
+                domaine__nom__iexact=domaine_nom
+            ).first()
+
+            stats = {
+                "xp_total": profil.xp_total,
+                "lacunes_relevees": profil.lacunes_identifiees,
+                "domaine": domaine_nom,
+                "scores_actuels": "Aucun score pour ce domaine"
+            }
+
+            if comp:
+                stats["scores_actuels"] = {
+                    "anamnese": comp.score_anamnese,
+                    "diagnostic": comp.score_diagnostic,
+                    "traitement": comp.score_traitement,
+                    "niveau": comp.niveau_actuel
+                }
+            
+            return json.dumps(stats, indent=2, ensure_ascii=False)
+        except Exception as e:
+            return f"Erreur DB: {str(e)}"
+
+    return await sync_to_async(get_data_sync)()
+
+
+# <--- NOUVEL OUTIL À AJOUTER CI-DESSOUS ---
+
+async def lire_analyse_expert(tool_context: ToolContext) -> str:
+    """
+    Lit le raisonnement interne de l'agent Expert Médical pour le tour actuel.
+    Utilise cette information pour comprendre pourquoi l'étudiant a été bien ou mal noté.
+    """
+    print("--- 👁️ TUTEUR: Lecture de l'analyse de l'expert ---")
+    
+    # La clé "temp:expert_analysis" est remplie par l'output_key de l'agent expert
+    analyse = tool_context.state.get("temp:expert_analysis", "L'expert n'a fourni aucune analyse pour ce tour.")
+    
+    return f"Voici le raisonnement de l'expert superviseur pour le dernier échange : \"{analyse}\""// END OF FILE: module_tuteur/tools/introspection_tools.py
+
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/urls.py
 
 from django.urls import path
 from .views import TuteurViewSet
+
 
 # On mappe manuellement les méthodes du ViewSet aux URLs
 urlpatterns = [
@@ -2237,31 +3055,45 @@ urlpatterns = [
         TuteurViewSet.as_view({'post': 'analyser_reponse'}), 
         name='tuteur-analyser-reponse'
     ),
+    path('session/<str:session_id>/state/', TuteurViewSet.as_view({'get': 'get_state'})),
+   
 ]// END OF FILE: module_tuteur/urls.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/views.py
 
 from rest_framework import status
 from rest_framework.response import Response
+from adrf.viewsets import ViewSet
 from drf_spectacular.utils import extend_schema
-from adrf.viewsets import ViewSet # Indispensable pour l'async natif
+from google.api_core.exceptions import ResourceExhausted
 
-from .agent import tuteur_service
+# --- IMPORTS NETTOYÉS ---
+# 'DatabaseSessionService' et 'db_url' ne sont plus utilisés directement ici.
+# On importe uniquement la fonction qui fait le travail.
+from config.adk_session import get_adk_session_service
+# --- FIN DU NETTOYAGE ---
+
 from .serializers import AnalyseReponseSerializer, DemarrerSessionSerializer
+from .orchestrator import orchestrator
+from .services import session_manager
+from module_interface.models import SessionApprentissage
 
 class TuteurViewSet(ViewSet):
     """
-    ViewSet 100% Asynchrone.
+    ViewSet Asynchrone pour le Tuteur Intelligent.
     """
     
     @extend_schema(request=DemarrerSessionSerializer)
     async def create_session(self, request):
         serializer = DemarrerSessionSerializer(data=request.data)
         if serializer.is_valid():
-            # Appel direct avec await, sans wrapper
-            session, msg = await tuteur_service.demarrer_session_async(
+            # On utilise notre fonction pour obtenir une instance correctement configurée
+            session_service = get_adk_session_service()
+            
+            session, msg = await session_manager.demarrer_session(
                 serializer.validated_data['email_apprenant'],
-                serializer.validated_data['domaine_nom']
+                serializer.validated_data['domaine_nom'],
+                session_service=session_service
             )
             
             if session:
@@ -2276,31 +3108,68 @@ class TuteurViewSet(ViewSet):
     async def analyser_reponse(self, request):
         serializer = AnalyseReponseSerializer(data=request.data)
         if serializer.is_valid():
-            # Appel direct avec await
-            result = await tuteur_service.analyser_reponse_async(
-                serializer.validated_data['session_id'],
-                serializer.validated_data['reponse_etudiant'],
-                serializer.validated_data.get('etape_actuelle', 'Diagnostic')
-            )
+            session_id = str(serializer.validated_data['session_id'])
+            message = serializer.validated_data['reponse_etudiant']
+
+            try:
+                session_obj = await SessionApprentissage.objects.select_related('apprenant').aget(id=session_id)
+                user_id = str(session_obj.apprenant.id)
+            except SessionApprentissage.DoesNotExist:
+                return Response({"error": "Session ID invalide"}, status=404)
+
+            session_service = get_adk_session_service()
+
+            try:
+                result = await orchestrator.traiter_interaction(
+                    user_id=user_id, 
+                    session_id=session_id, 
+                    message_etudiant=message,
+                    session_service=session_service
+                )
+                return Response(result)
+            except ResourceExhausted as e:
+                print(f"Quota API Gemini dépassé : {e.message}")
+                return Response(
+                    {"error": "Le service d'IA est temporairement surchargé. Veuillez réessayer dans quelques instants."},
+                    status=status.HTTP_429_TOO_MANY_REQUESTS
+                )
             
-            if "error" in result:
-                 return Response(result, status=status.HTTP_400_BAD_REQUEST)
-                 
-            return Response(result)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)// END OF FILE: module_tuteur/views.py
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    async def get_state(self, request, session_id=None):
+        try:
+            session_obj = await SessionApprentissage.objects.select_related('apprenant').aget(id=session_id)
+            user_id = str(session_obj.apprenant.id)
+            
+            session_service = get_adk_session_service()
+            
+            state = await orchestrator.get_session_details(session_id, user_id=user_id, session_service=session_service)
+            
+            if state:
+                return Response({
+                    "chat_history": state.get("history", []),
+                    "internal_logs": state.get("internal_logs", []),
+                    "student_profile": state.get("student_profile", {})
+                })
+            return Response({"error": "Etat introuvable"}, status=404)
+            
+        except SessionApprentissage.DoesNotExist:
+            return Response({"error": "Session Django introuvable"}, status=404)// END OF FILE: module_tuteur/views.py
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/requirements.txt
 
 Django>=4.2,<5.0
 psycopg2-binary
 djangorestframework
+django-cors-headers
 drf-spectacular
 gunicorn
 sqlalchemy
 google-adk
 python-dotenv
 adrf
-asyncpg// END OF FILE: requirements.txt
+asyncpg
+// END OF FILE: requirements.txt
 
 //---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/wait_for_db.py
 

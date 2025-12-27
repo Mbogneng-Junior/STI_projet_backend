@@ -6,7 +6,7 @@ from asgiref.sync import sync_to_async # NOUVEL IMPORT : pour appeler le code sy
 # Importation différée de models à l'intérieur de la fonction pour assurer l'initialisation de Django
 # from module_expert.models import CasClinique # Retire cet import global
 
-async def search_cardio_cases_fn(symptoms: str, tool_context: ToolContext) -> str:
+async def search_cardio_cases(symptoms: str, tool_context: ToolContext) -> str:
     """
     Recherche des cas cliniques similaires dans la base de connaissances
     pour le domaine de la Cardiologie.
@@ -49,4 +49,4 @@ async def search_cardio_cases_fn(symptoms: str, tool_context: ToolContext) -> st
         return f"Erreur lors de la recherche en Cardiologie: {str(e)}"
 
 # Le FunctionTool doit être marqué comme asynchrone 
-search_cardio_cases = FunctionTool(func=search_cardio_cases_fn)
+search_cardio_cases = FunctionTool(func=search_cardio_cases)

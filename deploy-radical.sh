@@ -49,7 +49,7 @@ ssh ${SSH_USER}@${DROPLET_IP} << EOF
 
     echo -e "\n--- 2.6. Collecte des fichiers statiques ---"
     # --noinput pour éviter les questions de confirmation
-    docker compose -f ${DOCKER_COMPOSE_FILE} exec web python manage.py collectstatic --noinput
+    docker compose -f ${DOCKER_COMPOSE_FILE} STI_projet_backend 
 
     echo -e "\n--- Déploiement distant terminé ! ---"
     echo "Votre application devrait être accessible via http://${DROPLET_IP}/api/docs/"

@@ -1,6 +1,7 @@
 from django.urls import path
 from .views import TuteurViewSet
 
+
 # On mappe manuellement les méthodes du ViewSet aux URLs
 urlpatterns = [
     # Route pour démarrer la session (POST)
@@ -16,4 +17,6 @@ urlpatterns = [
         TuteurViewSet.as_view({'post': 'analyser_reponse'}), 
         name='tuteur-analyser-reponse'
     ),
+    path('session/<str:session_id>/state/', TuteurViewSet.as_view({'get': 'get_state'})),
+   
 ]

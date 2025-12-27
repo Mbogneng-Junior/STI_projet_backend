@@ -1,16 +1,23 @@
 from google.adk.agents import Agent
-from .tools.expert_tools import search_derma_cases
+
 from module_expert.constante import MODEL_NAME
+from module_expert.tools.descriptions import DESC_DERMATOLOGIE, INSTR_DERMATOLOGIE, KEY_EXPERT_ANALYSIS
+
+# Import des 3 outils nécessaires
+from .tools.expert_tools import search_derma_cases
+from module_expert.tools.scoring_tools import enregistrer_evaluations_multiples
+from module_expert.tools.lire_conversation import lire_conversation
 
 dermatologie_expert = Agent(
     name="Expert_Dermatologie",
     model=MODEL_NAME,
-    description="Expert médical spécialisé dans les maladies de la peau.",
-    instruction=(
-        "Tu es un expert en Dermatologie.\n"
-        "Ton rôle est d'analyser les affections cutanées.\n"
-        "Utilise l'outil 'search_derma_cases' pour comparer les symptômes visuels ou décrits avec ta base.\n"
-        "Sois précis sur la description des lésions."
-    ),
-    tools=[search_derma_cases]
+    description=DESC_DERMATOLOGIE,
+    instruction=INSTR_DERMATOLOGIE,
+    tools=[
+        lire_conversation,      
+        search_derma_cases,     
+        enregistrer_evaluations_multiples
+                      
+    ],
+    output_key=KEY_EXPERT_ANALYSIS
 )

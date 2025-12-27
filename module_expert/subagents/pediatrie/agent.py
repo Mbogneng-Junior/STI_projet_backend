@@ -1,16 +1,22 @@
 from google.adk.agents import Agent
-from .tools.expert_tools import search_pedia_cases
+
 from module_expert.constante import MODEL_NAME
+from module_expert.tools.descriptions import DESC_PEDIATRIE, INSTR_PEDIATRIE, KEY_EXPERT_ANALYSIS
+
+# Import des 3 outils nécessaires
+from .tools.expert_tools import search_pedia_cases
+from module_expert.tools.scoring_tools import enregistrer_evaluations_multiples
+from module_expert.tools.lire_conversation import lire_conversation
 
 pediatrie_expert = Agent(
     name="Expert_Pediatrie",
     model=MODEL_NAME,
-    description="Expert médical spécialisé dans la santé des enfants et nourrissons.",
-    instruction=(
-        "Tu es un expert en Pédiatrie.\n"
-        "Ton rôle est d'analyser les cas cliniques concernant des enfants.\n"
-        "Utilise l'outil 'search_pedia_cases' pour valider tes diagnostics.\n"
-        "Adapte tes explications aux spécificités physiologiques de l'enfant."
-    ),
-    tools=[search_pedia_cases]
+    description=DESC_PEDIATRIE,
+    instruction=INSTR_PEDIATRIE,
+    tools=[
+        lire_conversation,      # Indispensable pour voir le chat
+        search_pedia_cases,     # Spécifique au domaine
+        enregistrer_evaluations_multiples      # Indispensable pour noter
+    ],
+    output_key=KEY_EXPERT_ANALYSIS
 )

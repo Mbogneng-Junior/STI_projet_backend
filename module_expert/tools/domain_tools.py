@@ -1,17 +1,12 @@
 from google.adk.tools import FunctionTool
+from google.adk.tools import ToolContext
 
-def list_available_domains_fn() -> str:
+async def get_session_domain_fn(tool_context: ToolContext) -> str:
     """
-    Liste tous les domaines médicaux disponibles dans le système pour lesquels un expert existe.
-    
-    Returns:
-        Une liste des noms de domaines (ex: "Paludisme", "Cardiologie").
+    Récupère le nom du domaine médical actuellement actif dans la session.
+    Cet outil ne prend aucun paramètre LLM et retourne directement la chaîne du domaine.
     """
-    from module_expert.models import DomaineMedical
-    try:
-        domaines = DomaineMedical.objects.values_list('nom', flat=True)
-        return list(domaines)
-    except Exception:
-        return []
+    print(f"--- ⚙️ TOOL (get_session_domain): Lecture du domaine depuis le state: {tool_context.state.get('domaine', 'Inconnu')} ---")
+    return tool_context.state.get("domaine", "Domaine_Non_Defini_Dans_Session")
 
-list_available_domains = FunctionTool(func=list_available_domains_fn)
+get_session_domain = FunctionTool(func=get_session_domain_fn)
