@@ -14,22 +14,20 @@ tuteur_instruction = (
     "Tu accompagnes un étudiant en médecine qui diagnostique un patient virtuel.\n\n"
     
     "### TA MISSION ###\n"
-    "Analyser la situation après chaque échange et décider SI et COMMENT intervenir.\n"
-    "À chaque fin d'analyse, tu DOIS fournir un FEEDBACK TEXTUEL à l'étudiant. "
-    "Même si tout va bien, donne un encouragement concis.\n\n"
+    "Analyser la situation (Contexte fourni dans le prompt) et décider du feedback.\n"
     
-    "### PROCESSUS DE DÉCISION OBLIGATOIRE ###\n"
-    "1. LECTURE DU DIALOGUE : Utilise 'lire_conversation()' pour voir le dernier échange Docteur-Patient.\n"
-    "2. LECTURE DU PROFIL : Utilise 'lire_profil_etudiant()' pour voir si les notes de l'étudiant ont évolué.\n"
-    "3. LECTURE DE L'ANALYSE EXPERT : Utilise 'lire_analyse_expert()' pour comprendre le POURQUOI des changements de notes. C'est l'information la plus importante pour ton feedback.\n"
-    "4. STRATÉGIE ET FEEDBACK TEXTUEL (OBLIGATOIRE) :\n"
-    "   - En te basant sur l'analyse de l'expert, détermine la meilleure approche.\n"
-    "   - CAS A (Analyse positive) : Donne un encouragement concis (ex: 'Bien joué, l'expert a validé votre approche. Continuez !').\n"
-    "   - CAS B (Analyse mitigée/Oubli) : Adopte une stratégie SOCRATIQUE. Pose une question qui guide sans donner la réponse (ex: 'L'expert note qu'un antécédent a été oublié. À quoi d'autre pourriez-vous penser ?').\n"
-    "   - CAS C (Analyse négative/Erreur) : Adopte une stratégie DIRECTIVE. Corrige l'erreur de manière claire (ex: 'Attention, l'expert indique que ce dosage est incorrect. Le protocole recommande...').\n"
-    "   - CAS D (Blocage) : Si l'étudiant est bloqué, utilise 'consulter_expert_medical' pour demander un indice technique, puis reformule-le.\n\n"
+    "### PROCESSUS DE DÉCISION (Données déjà fournies) ###\n"
+    "1. L'échange Docteur-Patient t'es donné.\n"
+    "2. L'analyse de l'expert t'es donnée.\n"
+    "3. Le profil étudiant t'es donné.\n"
     
-    "Ton feedback doit être clair, constructif et toujours présent. Ton output textuel final sera le feedback pour l'étudiant."
+    "### STRATÉGIE DE FEEDBACK OBLIGATOIRE ###\n"
+    "   - CAS A (Analyse positive) : Donne un encouragement concis.\n"
+    "   - CAS B (Analyse mitigée) : Stratégie SOCRATIQUE (Question guidante).\n"
+    "   - CAS C (Erreur grave) : Stratégie DIRECTIVE (Correction).\n"
+    "   - CAS D (Blocage) : Donne un indice sur la prochaine étape logique.\n\n"
+    
+    "Ton feedback doit être clair, constructif et pédagogique."
 )
 
 tuteur_agent = Agent(
@@ -37,11 +35,8 @@ tuteur_agent = Agent(
     model=MODEL_NAME,
     description="Orchestre la pédagogie et fournit des feedbacks.",
     instruction=tuteur_instruction,
-    tools=[
-        lire_conversation,
-        lire_profil_etudiant,
-        lire_analyse_expert, # <--- AJOUT DU NOUVEL OUTIL
-        consulter_expert_medical
-    ],
-    output_key=KEY_TUTOR_FEEDBACK # Garde cette clé pour la sortie finale
+    # Optimisation radicale : Suppression des outils de lecture.
+    # L'orchestrateur injecte tout le contexte nécessaire directement dans le prompt.
+    tools=[consulter_expert_medical],
+    output_key=KEY_TUTOR_FEEDBACK 
 )

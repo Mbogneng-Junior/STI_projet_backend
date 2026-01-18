@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Apprenant, Badge, ProfilEtudiant, NiveauCompetence
+from .models import Apprenant, Badge, ProfilEtudiant, NiveauCompetence, QuestionProfiling
 
 class ApprenantSerializer(serializers.ModelSerializer):
     class Meta:
@@ -22,3 +22,14 @@ class NiveauCompetenceSerializer(serializers.ModelSerializer):
     class Meta:
         model = NiveauCompetence
         fields = '__all__'
+
+class QuestionProfilingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = QuestionProfiling
+        fields = '__all__'
+
+class ProfilingSubmissionSerializer(serializers.Serializer):
+    reponses = serializers.DictField(
+        child=serializers.IntegerField(),
+        help_text="Dictionnaire {question_id: index_option_choisie}"
+    )

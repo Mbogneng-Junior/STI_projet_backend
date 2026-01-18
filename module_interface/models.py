@@ -48,5 +48,27 @@ class Interaction(models.Model):
     class Meta:
         ordering = ['timestamp']
 
+class EvaluationSommative(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    session = models.OneToOneField(
+        SessionApprentissage, 
+        on_delete=models.CASCADE, 
+        related_name="evaluation"
+    )
+    score_global = models.IntegerField()
+    score_diagnostic = models.IntegerField()
+    score_anamnese = models.IntegerField()
+    score_prise_en_charge = models.IntegerField()
+    score_communication = models.IntegerField()
+    
+    difficultes_identifiees = models.JSONField(default=list) 
+    points_forts = models.JSONField(default=list) 
+    feedback_global = models.TextField()
+    
+    date_evaluation = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Evaluation de {self.session}"
+
     def __str__(self):
         return f"Interaction du {self.timestamp.strftime('%Y-%m-%d %H:%M')}"

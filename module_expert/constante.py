@@ -1,2 +1,2 @@
 # module_expert/constante.py
-MODEL_NAME = "gemini-2.5-flash-lite"  # Remplacez par le nom réel du modèle
+MODEL_NAME = "gemini-flash-latest"  # Version stable avec meilleurs quotas.

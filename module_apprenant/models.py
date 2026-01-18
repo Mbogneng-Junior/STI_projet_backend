@@ -46,10 +46,21 @@ class ProfilEtudiant(models.Model):
     lacunes_identifiees = models.JSONField(default=list, blank=True) 
     
     badges = models.ManyToManyField(Badge, blank=True)
+    est_profile = models.BooleanField(default=False) # Indique si le test de positionnement a été fait
     updated_at = models.DateTimeField(auto_now=True)
 
     def __str__(self):
         return f"Profil de {self.apprenant.email} (XP: {self.xp_total})"
+
+class QuestionProfiling(models.Model):
+    competence = models.CharField(max_length=100) # Ex: "Raisonnement Clinique"
+    situation = models.TextField()
+    question_text = models.TextField()
+    options = models.JSONField() # Liste de {texte, score, feedback}
+
+    def __str__(self):
+        return f"{self.competence} - {self.question_text[:50]}"
+
 
 class NiveauCompetence(models.Model):
     """

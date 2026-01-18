@@ -18,13 +18,17 @@ db_url = f"postgresql+asyncpg://{DB_USER}:{DB_PASSWORD}@{DB_HOST}:{DB_PORT}/{DB_
 
 
 # 4. Définition de la fonction d'instanciation du service
+# NOTE: On instance le service à chaque demande pour être "Loop-Safe" avec asgiref/asyncio.
+# Le problème de "Race Condition" sur la création des tables/types doit être géré
+# par des retries au niveau de l'appelant.
+
 def get_adk_session_service():
     """
-    Instancie le DatabaseSessionService en lui passant les options de connexion
-    pour que son moteur interne utilise le bon schéma PostgreSQL.
-    Ceci est la méthode de contournement pour le bug de l'argument 'schema'.
+    Instancie le DatabaseSessionService.
+    Retourne une nouvelle instance à chaque appel pour garantir la compatibilité
+    avec la boucle d'événements courante (Event Loop) du thread de la requête.
     """
-    print("🔧 Instanciation (Workaround) du ADK DatabaseSessionService...")
+    # print("🔧 Instanciation (Factory) du ADK DatabaseSessionService...")
 
     # On définit les options que SQLAlchemy `create_async_engine` comprend.
     engine_options = {
@@ -34,13 +38,15 @@ def get_adk_session_service():
                 # en priorité dans 'adk_schema'."
                 "search_path": "adk_schema,public"
             }
-        }
+        },
+        # Optionnel: Réduire la taille du pool pour éviter de saturer postgres
+        # si on crée beaucoup d'instances.
+        "pool_size": 2,
+        "max_overflow": 5,
     }
 
     # SOLUTION FINALE :
     # On ne passe QUE db_url et les options compatibles avec create_async_engine.
-    # On ne passe SURTOUT PAS l'argument 'schema' qui cause le TypeError.
-    # La logique du `search_path` va forcer la création et la recherche dans le bon schéma.
     return DatabaseSessionService(
         db_url=db_url,
         **engine_options

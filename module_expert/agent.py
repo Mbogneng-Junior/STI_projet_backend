@@ -8,10 +8,13 @@ from google.adk.agents.context_cache_config import ContextCacheConfig
 
 from module_expert.tools.descriptions import KEY_ROOT_DELEGATION
 from .subagents import (
-    malaria_expert,
     cardiologie_expert,
-    pediatrie_expert,
-    dermatologie_expert
+    endocrinologie_expert,
+    medecine_generale_expert,
+    medecine_interne_expert,
+    pneumologie_expert,
+    urgences_expert,
+    urologie_expert
 )
 
 import os
@@ -25,6 +28,7 @@ from .tools.domain_tools import get_session_domain # <--- NOUVEL IMPORT
 
 # --- AGENT RACINE ---
 
+# Mapping des domaines selon le JSON fourni
 root_expert_instruction = (
     "Tu es un routeur d'experts médicaux. Ton UNIQUE et SEUL objectif est de déterminer le nom de l'expert spécifique à appeler.\n"
     "### PROCÉDURE OBLIGATOIRE ###\n"
@@ -32,12 +36,15 @@ root_expert_instruction = (
     "2. En te basant sur le RÉSULTAT de cet outil, tu DOIS retourner UNIQUEMENT le nom EXACT du sous-agent expert correspondant, et RIEN D'AUTRE.\n"
     "   Ceci est un MAPPING STRICT. Ne génère ABSOLUMENT PAS de code Python, de raisonnement, ou d'autres phrases.\n"
     "   Utilise le résultat de 'get_session_domain()' pour ce mapping :\n"
-    "   - Si le domaine est 'Paludisme', réponds: 'Expert_Paludisme'.\n"
     "   - Si le domaine est 'Cardiologie', réponds: 'Expert_Cardiologie'.\n"
-    "   - Si le domaine est 'Dermatologie', réponds: 'Expert_Dermatologie'.\n"
-    "   - Si le domaine est 'Pédiatrie', réponds: 'Expert_Pediatrie'.\n"
+    "   - Si le domaine est 'Endocrinologie', réponds: 'Expert_Endocrinologie'.\n"
+    "   - Si le domaine est 'Médecine générale' (ou 'Paludisme'), réponds: 'Expert_Medecine_Generale'.\n"
+    "   - Si le domaine est 'Médecine interne', réponds: 'Expert_Medecine_Interne'.\n"
+    "   - Si le domaine est 'Pneumologie', réponds: 'Expert_Pneumologie'.\n"
+    "   - Si le domaine est 'Urgences', réponds: 'Expert_Urgences'.\n"
+    "   - Si le domaine est 'Urologie', réponds: 'Expert_Urologie'.\n"
     "   - Si le domaine retourné par l'outil n'est pas l'un de ceux-ci, réponds: 'Domaine_Inconnu'.\n"
-    "RÉPONDS UNIQUEMENT avec le nom de l'agent. Par exemple: 'Expert_Paludisme'."
+    "RÉPONDS UNIQUEMENT avec le nom de l'agent. Par exemple: 'Expert_Cardiologie'."
 )
 
 root_agent = Agent(
@@ -47,10 +54,13 @@ root_agent = Agent(
     instruction=root_expert_instruction,
     tools=[get_session_domain], # <--- L'AGENT RACINE UTILISE MAINTENANT CET OUTIL
     sub_agents=[
-        malaria_expert,
         cardiologie_expert,
-        pediatrie_expert,
-        dermatologie_expert
+        endocrinologie_expert,
+        medecine_generale_expert,
+        medecine_interne_expert,
+        pneumologie_expert,
+        urgences_expert,
+        urologie_expert
     ],
     output_key=KEY_ROOT_DELEGATION
 )

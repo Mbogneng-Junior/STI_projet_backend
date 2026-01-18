@@ -8,3 +8,6 @@ class AnalyseReponseSerializer(serializers.Serializer):
     session_id = serializers.UUIDField()
     reponse_etudiant = serializers.CharField()
     etape_actuelle = serializers.CharField(required=False, default="Diagnostic")
+
+class TerminerSessionSerializer(serializers.Serializer):
+    session_id = serializers.UUIDField()

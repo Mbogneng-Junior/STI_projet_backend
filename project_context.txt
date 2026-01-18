@@ -1,11 +1,11 @@
-Project Context From: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend
-Generated On: sam. 27 déc. 2025 17:11:35 WAT
+Project Context From: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend
+Generated On: sam. 17 janv. 2026 07:28:41 WAT
 ===============================================
 Ignored Directory Patterns: .* node_modules vendor build dist target __pycache__ .next cache target storage
 Ignored File Patterns: *.log *.jar *.pdf *.class *.sqlite project_context.txt package-lock.json yarn.lock composer.lock *.ico pnpm-lock.yaml
 ===============================================
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/config/adk_session.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/config/adk_session.py
 
 import os
 from dotenv import load_dotenv
@@ -55,7 +55,7 @@ def get_adk_session_service():
         **engine_options
     )// END OF FILE: config/adk_session.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/config/asgi.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/config/asgi.py
 
 import os
 import django
@@ -76,7 +76,7 @@ except Exception as e:
 
 application = get_asgi_application()// END OF FILE: config/asgi.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/config/settings.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/config/settings.py
 
 """
 Django settings for config project.
@@ -123,6 +123,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'module_expert',
     'module_auth',
+    'django_filters',
     'module_apprenant',
     'module_interface',
     'module_tuteur',
@@ -240,7 +241,7 @@ SPECTACULAR_SETTINGS = {
 # Autoriser les requêtes de n'importe quelle origine
 CORS_ALLOW_ALL_ORIGINS = True// END OF FILE: config/settings.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/config/urls.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/config/urls.py
 
 # config/urls.py
 
@@ -282,18 +283,29 @@ urlpatterns = [
     path('api/v1/auth/expert/login/', ExpertLoginView.as_view(), name='auth_expert_login'),
 ]// END OF FILE: config/urls.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/config/wsgi.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/config/wsgi.py
 
 import os
-
 from django.core.wsgi import get_wsgi_application
+from django.core.management import call_command # <--- AJOUTER CET IMPORT
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings')
 
 application = get_wsgi_application()
-// END OF FILE: config/wsgi.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/deploy-radical.sh
+# --- AJOUTER CE BLOC ---
+# On s'assure que cela ne s'exécute pas pendant les migrations ou autres commandes
+# Le check 'runserver' est une sécurité simple pour le développement.
+import sys
+if 'runserver' in sys.argv:
+    try:
+        print("🚀 [WSGI] Exécution de la commande init_data au démarrage...")
+        call_command('init_data')
+    except Exception as e:
+        print(f"Erreur lors de l'exécution de init_data via WSGI : {e}")
+# --- FIN DE L'AJOUT ---// END OF FILE: config/wsgi.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/deploy-radical.sh
 
 #!/bin/bash
 set -e # Sortir immédiatement si une commande échoue
@@ -356,7 +368,7 @@ EOF
 echo -e "\n=== Script de déploiement local terminé ==="
 echo "Accédez à l'application via http://${DROPLET_IP}/api/docs/"// END OF FILE: deploy-radical.sh
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/deploy.sh
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/deploy.sh
 
 #!/bin/bash
 set -e # Sortir immédiatement si une commande échoue
@@ -406,7 +418,7 @@ EOF
 echo -e "\n=== Script de déploiement rapide local terminé ==="
 echo "Accédez à l'application via http://${DROPLET_IP}/api/docs/"// END OF FILE: deploy.sh
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/docker-compose.dev.yml
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/docker-compose.dev.yml
 
 version: '3.9'
 
@@ -432,46 +444,7 @@ services:
 volumes:
   postgres_data:// END OF FILE: docker-compose.dev.yml
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/docker-compose.red
-
-version: '3.9'
-
-services:
-  db:
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: backendsti
-      POSTGRES_USER: backendsti
-      POSTGRES_PASSWORD: backendsti
-    volumes:
-      - postgres_data_v2:/var/lib/postgresql/data
-    ports:
-      - "5433:5432"
-
-  web:
-    build: .
-    command: sh -c "python wait_for_db.py && python manage.py migrate && python3 manage.py runserver 0.0.0.0:8000"
-    volumes:
-      - .:/app
-    ports:
-      - "8000:8000"
-    depends_on:
-      - db
-    environment:
-      - DJANGO_SUPERUSER_USERNAME=admin
-      - DJANGO_SUPERUSER_PASSWORD=admin
-      - DJANGO_SUPERUSER_EMAIL=admin@example.com
-      - DB_NAME=backendsti
-      - DB_USER=backendsti
-      - DB_PASSWORD=backendsti
-      - DB_HOST=db
-      - DB_PORT=5432
-
-volumes:
-  postgres_data_v2:
-// END OF FILE: docker-compose.red
-
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/docker-compose.yml
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/docker-compose.yml
 
 version: '3.9'
 
@@ -500,7 +473,7 @@ services:
 volumes:
   staticfiles:// END OF FILE: docker-compose.yml
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/Dockerfile
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/Dockerfile
 
 FROM python:3.11-slim
 
@@ -522,7 +495,7 @@ USER appuser
 CMD ["sh", "-c", "python wait_for_db.py && python manage.py migrate && gunicorn config.wsgi:application --bind 0.0.0.0:8000"]
 // END OF FILE: Dockerfile
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/.env
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/.env
 
 # .env - Configuration pour DÉVELOPPEMENT LOCAL (Hybride)
 
@@ -543,9 +516,9 @@ DB_SSLMODE=disable
 
 # --- Google AI ---
 GOOGLE_GENAI_USE_VERTEXAI=FALSE
-GOOGLE_API_KEY=AIzaSyDpVdELSMoyPL-HrocfJNVArO0WFXoIl0o// END OF FILE: .env
+GOOGLE_API_KEY=AIzaSyB5CWGGd4UZ9J3NEX71L0J_5YyAlY6EDzI// END OF FILE: .env
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/.gitignore
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/.gitignore
 
 .env
 __pycache__/
@@ -554,7 +527,28 @@ db.sqlite3
 .DS_Store
 // END OF FILE: .gitignore
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/intermediaire
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/instruction
+
+
+
+
+find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+find . -path "*/migrations/*.pyc"  -delete
+
+psql -U doadmin -h backendsti-do-user-27633477-0.h.db.ondigitalocean.com -p 25060 -d defaultdb
+
+DO $$ DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+    END LOOP;
+END $$;
+
+
+docker compose -f docker-compose.yml exec web python manage.py makemigrations module_apprenant module_expert module_interface module_auth// END OF FILE: instruction
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/intermediaire
 
 version: '3.9'
 
@@ -591,7 +585,7 @@ services:
 volumes:
   postgres_data:// END OF FILE: intermediaire
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/manage.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/manage.py
 
 #!/usr/bin/env python
 """Django's command-line utility for administrative tasks."""
@@ -617,14 +611,14 @@ if __name__ == '__main__':
     main()
 // END OF FILE: manage.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/admin.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_apprenant/admin.py
 
 from django.contrib import admin
 
 # Register your models here.
 // END OF FILE: module_apprenant/admin.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/apps.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_apprenant/apps.py
 
 from django.apps import AppConfig
 
@@ -633,84 +627,15 @@ class ModuleApprenantConfig(AppConfig):
     name = 'module_apprenant'
 // END OF FILE: module_apprenant/apps.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_apprenant/__init__.py
 
 // END OF FILE: module_apprenant/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/migrations/0001_initial.py
-
-# Generated by Django 6.0 on 2025-12-27 14:01
-
-import django.db.models.deletion
-import uuid
-from django.conf import settings
-from django.db import migrations, models
-
-
-class Migration(migrations.Migration):
-
-    initial = True
-
-    dependencies = [
-        ('module_expert', '0001_initial'),
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-    ]
-
-    operations = [
-        migrations.CreateModel(
-            name='Apprenant',
-            fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('nom', models.CharField(max_length=255)),
-                ('email', models.EmailField(max_length=254, unique=True)),
-                ('date_inscription', models.DateTimeField(auto_now_add=True)),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='apprenant', to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Badge',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('nom', models.CharField(max_length=255, unique=True)),
-                ('description', models.TextField()),
-                ('icon', models.CharField(blank=True, max_length=100, null=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='ProfilEtudiant',
-            fields=[
-                ('apprenant', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, primary_key=True, related_name='profil', serialize=False, to='module_apprenant.apprenant')),
-                ('xp_total', models.PositiveIntegerField(default=0)),
-                ('lacunes_identifiees', models.JSONField(blank=True, default=list)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('badges', models.ManyToManyField(blank=True, to='module_apprenant.badge')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='NiveauCompetence',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('niveau_actuel', models.CharField(choices=[('DEBUTANT', 'Débutant'), ('INTERMEDIAIRE', 'Intermédiaire'), ('AVANCE', 'Avancé'), ('EXPERT', 'Expert')], default='DEBUTANT', max_length=20)),
-                ('score_anamnese', models.FloatField(default=0.0)),
-                ('score_diagnostic', models.FloatField(default=0.0)),
-                ('score_traitement', models.FloatField(default=0.0)),
-                ('score_relationnel', models.FloatField(default=0.0)),
-                ('progression_globale', models.FloatField(default=0.0)),
-                ('domaine', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='niveaux_apprenants', to='module_expert.domainemedical')),
-                ('profil_etudiant', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='competences', to='module_apprenant.profiletudiant')),
-            ],
-            options={
-                'unique_together': {('profil_etudiant', 'domaine')},
-            },
-        ),
-    ]
-// END OF FILE: module_apprenant/migrations/0001_initial.py
-
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/migrations/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_apprenant/migrations/__init__.py
 
 // END OF FILE: module_apprenant/migrations/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/models.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_apprenant/models.py
 
 import uuid
 from django.db import models
@@ -803,7 +728,7 @@ class NiveauCompetence(models.Model):
     def __str__(self):
         return f"{self.profil_etudiant.apprenant.email} - {self.domaine.nom} ({self.niveau_actuel})"// END OF FILE: module_apprenant/models.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/serializers.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_apprenant/serializers.py
 
 from rest_framework import serializers
 from .models import Apprenant, Badge, ProfilEtudiant, NiveauCompetence
@@ -831,14 +756,14 @@ class NiveauCompetenceSerializer(serializers.ModelSerializer):
         fields = '__all__'
 // END OF FILE: module_apprenant/serializers.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/tests.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_apprenant/tests.py
 
 from django.test import TestCase
 
 # Create your tests here.
 // END OF FILE: module_apprenant/tests.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/urls.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_apprenant/urls.py
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -860,7 +785,7 @@ urlpatterns = [
 ]
 // END OF FILE: module_apprenant/urls.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_apprenant/views.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_apprenant/views.py
 
 from rest_framework import viewsets
 from drf_spectacular.utils import extend_schema
@@ -893,14 +818,14 @@ class NiveauCompetenceViewSet(viewsets.ModelViewSet):
     serializer_class = NiveauCompetenceSerializer
 // END OF FILE: module_apprenant/views.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/admin.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_auth/admin.py
 
 from django.contrib import admin
 
 # Register your models here.
 // END OF FILE: module_auth/admin.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/apps.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_auth/apps.py
 
 from django.apps import AppConfig
 
@@ -909,22 +834,22 @@ class ModuleAuthConfig(AppConfig):
     name = 'module_auth'
 // END OF FILE: module_auth/apps.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_auth/__init__.py
 
 // END OF FILE: module_auth/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/migrations/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_auth/migrations/__init__.py
 
 // END OF FILE: module_auth/migrations/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/models.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_auth/models.py
 
 from django.db import models
 
 # Create your models here.
 // END OF FILE: module_auth/models.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/serializers.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_auth/serializers.py
 
 
 
@@ -1029,14 +954,14 @@ class ExpertLoginSerializer(serializers.Serializer):
 
         return data// END OF FILE: module_auth/serializers.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/tests.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_auth/tests.py
 
 from django.test import TestCase
 
 # Create your tests here.
 // END OF FILE: module_auth/tests.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_auth/views.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_auth/views.py
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -1138,14 +1063,14 @@ class ExpertLoginView(APIView):
             }
         })// END OF FILE: module_auth/views.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/admin.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/admin.py
 
 from django.contrib import admin
 
 # Register your models here.
 // END OF FILE: module_expert/admin.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/agent.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/agent.py
 
 import json
 from google.adk.agents import Agent
@@ -1214,7 +1139,7 @@ expert_app = App(
     ),
 )// END OF FILE: module_expert/agent.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/apps.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/apps.py
 
 from django.apps import AppConfig
 
@@ -1223,17 +1148,17 @@ class ModuleExpertConfig(AppConfig):
     name = 'module_expert'
 // END OF FILE: module_expert/apps.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/constante.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/constante.py
 
 # module_expert/constante.py
 MODEL_NAME = "gemini-2.5-flash-lite"  # Remplacez par le nom réel du modèle
 // END OF FILE: module_expert/constante.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/__init__.py
 
 // END OF FILE: module_expert/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/management/commands/init_data.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/management/commands/init_data.py
 
 import json
 from django.core.management.base import BaseCommand
@@ -1301,98 +1226,19 @@ class Command(BaseCommand):
 
         self.stdout.write(self.style.SUCCESS("🎉 Initialisation terminée ! Les domaines sont prêts."))// END OF FILE: module_expert/management/commands/init_data.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/management/commands/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/management/commands/__init__.py
 
 // END OF FILE: module_expert/management/commands/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/management/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/management/__init__.py
 
 // END OF FILE: module_expert/management/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/migrations/0001_initial.py
-
-# Generated by Django 6.0 on 2025-12-27 14:01
-
-import django.db.models.deletion
-import uuid
-from django.conf import settings
-from django.db import migrations, models
-
-
-class Migration(migrations.Migration):
-
-    initial = True
-
-    dependencies = [
-        migrations.swappable_dependency(settings.AUTH_USER_MODEL),
-    ]
-
-    operations = [
-        migrations.CreateModel(
-            name='DomaineMedical',
-            fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('nom', models.CharField(max_length=255, unique=True)),
-                ('description', models.TextField(blank=True)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='CasClinique',
-            fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('titre', models.CharField(max_length=255)),
-                ('statut', models.CharField(choices=[('BROUILLON_IA', 'Brouillon (IA)'), ('EN_REVISION', 'En Révision'), ('PUBLIE', 'Publié'), ('REJETE', 'Rejeté'), ('ARCHIVE', 'Archivé')], default='BROUILLON_IA', max_length=20)),
-                ('difficulte', models.CharField(choices=[('DEBUTANT', 'Débutant'), ('INTERMEDIAIRE', 'Intermédiaire'), ('AVANCE', 'Avancé'), ('EXPERT', 'Expert')], max_length=20)),
-                ('donnees_patient', models.JSONField()),
-                ('historique_medical', models.TextField()),
-                ('solution_experte', models.TextField()),
-                ('date_validation', models.DateTimeField(blank=True, null=True)),
-                ('source_fultang_id', models.CharField(blank=True, db_index=True, max_length=255, null=True)),
-                ('domaine', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='cas_cliniques', to='module_expert.domainemedical')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='ExpertHumain',
-            fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('nom', models.CharField(max_length=255)),
-                ('email', models.EmailField(default='default@email.com', max_length=254, unique=True)),
-                ('matricule', models.CharField(max_length=100, unique=True)),
-                ('domaine_expertise', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='experts_humains', to='module_expert.domainemedical')),
-                ('user', models.OneToOneField(on_delete=django.db.models.deletion.CASCADE, related_name='experthumain', to=settings.AUTH_USER_MODEL)),
-            ],
-        ),
-        migrations.CreateModel(
-            name='ExpertIA',
-            fields=[
-                ('id', models.CharField(max_length=255, primary_key=True, serialize=False)),
-                ('nom_ia', models.CharField(max_length=255)),
-                ('base_connaissance', models.TextField(blank=True)),
-                ('domaine_specialisation', models.ForeignKey(on_delete=django.db.models.deletion.PROTECT, related_name='experts_ia', to='module_expert.domainemedical')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='EtapeClinique',
-            fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('ordre', models.PositiveIntegerField()),
-                ('description', models.TextField()),
-                ('type_etape', models.CharField(blank=True, max_length=100)),
-                ('cas_clinique', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='etapes', to='module_expert.casclinique')),
-            ],
-            options={
-                'ordering': ['ordre'],
-                'unique_together': {('cas_clinique', 'ordre')},
-            },
-        ),
-    ]
-// END OF FILE: module_expert/migrations/0001_initial.py
-
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/migrations/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/migrations/__init__.py
 
 // END OF FILE: module_expert/migrations/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/models.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/models.py
 
 # module_expert/models.py
 
@@ -1487,7 +1333,7 @@ class EtapeClinique(models.Model):
     def __str__(self):
         return f"Étape {self.ordre} de {self.cas_clinique.titre}"// END OF FILE: module_expert/models.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/serializers.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/serializers.py
 
 from rest_framework import serializers
 from .models import DomaineMedical, ExpertHumain, ExpertIA, CasClinique, EtapeClinique
@@ -1520,7 +1366,7 @@ class CasCliniqueSerializer(serializers.ModelSerializer):
         fields = '__all__'
 // END OF FILE: module_expert/serializers.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/cardiologie/agent.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/cardiologie/agent.py
 
 from google.adk.agents import Agent
 
@@ -1545,11 +1391,11 @@ cardiologie_expert = Agent(
     output_key=KEY_EXPERT_ANALYSIS
 )// END OF FILE: module_expert/subagents/cardiologie/agent.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/cardiologie/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/cardiologie/__init__.py
 
 from .agent import cardiologie_expert// END OF FILE: module_expert/subagents/cardiologie/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/cardiologie/tools/expert_tools.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/cardiologie/tools/expert_tools.py
 
 import json
 from google.adk.tools import FunctionTool
@@ -1604,7 +1450,7 @@ async def search_cardio_cases(symptoms: str, tool_context: ToolContext) -> str:
 # Le FunctionTool doit être marqué comme asynchrone 
 search_cardio_cases = FunctionTool(func=search_cardio_cases)// END OF FILE: module_expert/subagents/cardiologie/tools/expert_tools.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/cardiologie/tools/knowledge.json
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/cardiologie/tools/knowledge.json
 
 [
   {
@@ -1615,7 +1461,7 @@ search_cardio_cases = FunctionTool(func=search_cardio_cases)// END OF FILE: modu
   }
 ]// END OF FILE: module_expert/subagents/cardiologie/tools/knowledge.json
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/dermatologie/agent.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/dermatologie/agent.py
 
 from google.adk.agents import Agent
 
@@ -1641,11 +1487,11 @@ dermatologie_expert = Agent(
     output_key=KEY_EXPERT_ANALYSIS
 )// END OF FILE: module_expert/subagents/dermatologie/agent.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/dermatologie/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/dermatologie/__init__.py
 
 from .agent import dermatologie_expert// END OF FILE: module_expert/subagents/dermatologie/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/dermatologie/tools/expert_tools.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/dermatologie/tools/expert_tools.py
 
 import json
 from google.adk.tools import FunctionTool
@@ -1697,7 +1543,7 @@ async def search_derma_cases(symptoms: str, tool_context: ToolContext) -> str:
 
 search_derma_cases = FunctionTool(func=search_derma_cases)// END OF FILE: module_expert/subagents/dermatologie/tools/expert_tools.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/dermatologie/tools/knowledge.json
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/dermatologie/tools/knowledge.json
 
 [
   {
@@ -1708,7 +1554,7 @@ search_derma_cases = FunctionTool(func=search_derma_cases)// END OF FILE: module
   }
 ]// END OF FILE: module_expert/subagents/dermatologie/tools/knowledge.json
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/__init__.py
 
 from .malaria import malaria_expert
 from .cardiologie import cardiologie_expert
@@ -1716,7 +1562,7 @@ from .pediatrie import pediatrie_expert
 from .dermatologie import dermatologie_expert
 // END OF FILE: module_expert/subagents/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/malaria/agent.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/malaria/agent.py
 
 from google.adk.agents import Agent
 
@@ -1741,11 +1587,11 @@ malaria_expert = Agent(
     output_key=KEY_EXPERT_ANALYSIS
 )// END OF FILE: module_expert/subagents/malaria/agent.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/malaria/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/malaria/__init__.py
 
 from .agent import malaria_expert// END OF FILE: module_expert/subagents/malaria/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/malaria/tools/expert_tools.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/malaria/tools/expert_tools.py
 
 import json
 from google.adk.tools import FunctionTool
@@ -1797,7 +1643,7 @@ async def search_similar_cases(symptoms: str, tool_context: ToolContext) -> str:
 
 search_similar_cases = FunctionTool(func=search_similar_cases)// END OF FILE: module_expert/subagents/malaria/tools/expert_tools.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/malaria/tools/knowledge.json
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/malaria/tools/knowledge.json
 
 [
   {
@@ -1808,7 +1654,7 @@ search_similar_cases = FunctionTool(func=search_similar_cases)// END OF FILE: mo
   }
 ]// END OF FILE: module_expert/subagents/malaria/tools/knowledge.json
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/patient/agent.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/patient/agent.py
 
 from google.adk.agents import Agent
 from module_expert.constante import MODEL_NAME
@@ -1838,7 +1684,7 @@ patient_agent = Agent(
     tools=[lire_conversation]
 )// END OF FILE: module_expert/subagents/patient/agent.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/pediatrie/agent.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/pediatrie/agent.py
 
 from google.adk.agents import Agent
 
@@ -1863,11 +1709,11 @@ pediatrie_expert = Agent(
     output_key=KEY_EXPERT_ANALYSIS
 )// END OF FILE: module_expert/subagents/pediatrie/agent.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/pediatrie/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/pediatrie/__init__.py
 
 from .agent import pediatrie_expert// END OF FILE: module_expert/subagents/pediatrie/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/pediatrie/tools/expert_tools.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/pediatrie/tools/expert_tools.py
 
 import json
 from google.adk.tools import FunctionTool
@@ -1919,7 +1765,7 @@ async def search_pedia_cases(symptoms: str, tool_context: ToolContext) -> str:
 
 search_pedia_cases = FunctionTool(func=search_pedia_cases)// END OF FILE: module_expert/subagents/pediatrie/tools/expert_tools.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/subagents/pediatrie/tools/knowledge.json
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/subagents/pediatrie/tools/knowledge.json
 
 [
   {
@@ -1930,14 +1776,14 @@ search_pedia_cases = FunctionTool(func=search_pedia_cases)// END OF FILE: module
   }
 ]// END OF FILE: module_expert/subagents/pediatrie/tools/knowledge.json
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/tests.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/tests.py
 
 from django.test import TestCase
 
 # Create your tests here.
 // END OF FILE: module_expert/tests.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/tools/descriptions.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/tools/descriptions.py
 
 # ==============================================================================
 # --- AGENT OUTPUT KEYS ---
@@ -2077,7 +1923,7 @@ INSTR_PEDIATRIE = (
     "3. enregistrer_evaluations_multiples(evaluations_json: str): Outil pour attribuer des notes et feedbacks."
 )// END OF FILE: module_expert/tools/descriptions.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/tools/domain_tools.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/tools/domain_tools.py
 
 from google.adk.tools import FunctionTool
 from google.adk.tools import ToolContext
@@ -2092,7 +1938,7 @@ async def get_session_domain_fn(tool_context: ToolContext) -> str:
 
 get_session_domain = FunctionTool(func=get_session_domain_fn)// END OF FILE: module_expert/tools/domain_tools.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/tools/lire_conversation.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/tools/lire_conversation.py
 
 from google.adk.tools.tool_context import ToolContext
 
@@ -2140,7 +1986,7 @@ def lire_conversation(tool_context: ToolContext) -> str:
 
     return formatted_dialogue// END OF FILE: module_expert/tools/lire_conversation.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/tools/scoring_tools.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/tools/scoring_tools.py
 
 import json
 from google.adk.tools import ToolContext
@@ -2153,31 +1999,17 @@ from module_expert.models import DomaineMedical
 async def enregistrer_evaluations_multiples(evaluations_json: str, tool_context: ToolContext) -> str:
     """
     Met à jour PLUSIEURS compétences de l'étudiant en un seul appel.
-    
-    Args:
-        evaluations_json (str): Une chaîne de caractères JSON représentant une liste d'évaluations.
-                               Exemple: '[{"competence": "diagnostic", "points": -5, "feedback": "Erreur majeure."}]'
-        tool_context (ToolContext): Le contexte de l'agent fourni par l'ADK.
     """
-    # --- ÉTAPE DE DÉBOGAGE CRUCIALE ---
     print("--- 🎓 TOOL (enregistrer_evaluations_multiples): Données reçues ---")
     print(evaluations_json)
     print("---------------------------------------------------------------")
     
-    # --- FIABILISATION DE L'ENTRÉE ---
-    if not isinstance(evaluations_json, str) or not evaluations_json.strip().startswith('['):
-        error_msg = f"Erreur : L'entrée n'est pas une chaîne de caractères JSON représentant une liste. Reçu : {type(evaluations_json)}"
-        print(error_msg)
-        return error_msg
-
     try:
         evaluations = json.loads(evaluations_json)
         if not isinstance(evaluations, list):
             return "Erreur : le JSON fourni n'est pas une liste."
     except json.JSONDecodeError as e:
-        error_msg = f"Erreur : La chaîne de caractères fournie n'est pas un JSON valide. Erreur : {e}"
-        print(error_msg)
-        return error_msg
+        return f"Erreur : La chaîne de caractères fournie n'est pas un JSON valide. Erreur : {e}"
 
     user_id = tool_context.state.get("user_id")
     domaine_nom = tool_context.state.get("domaine")
@@ -2185,7 +2017,54 @@ async def enregistrer_evaluations_multiples(evaluations_json: str, tool_context:
     if not user_id or not domaine_nom:
         return "Erreur système : user_id ou domaine manquant dans le state."
 
-    # ... (Le reste de la fonction reste identique)
+    # --- CORRECTION MAJEURE : MISE À JOUR DU STATE EN PREMIER ---
+
+    # 1. On récupère le profil depuis l'état de la session (notre source de vérité)
+    state_profile = tool_context.state.get("student_profile", {})
+
+    # 2. On s'assure que les structures de données existent
+    if "competences" not in state_profile or not isinstance(state_profile["competences"], dict):
+        state_profile["competences"] = {}
+    if "feedbacks" not in state_profile or not isinstance(state_profile["feedbacks"], list):
+        state_profile["feedbacks"] = []
+    if "score_global" not in state_profile:
+        # On initialise avec le score de la BDD si c'est la première fois
+        initial_profil = await sync_to_async(ProfilEtudiant.objects.get)(apprenant__id=user_id)
+        state_profile["score_global"] = initial_profil.xp_total
+
+    # 3. On applique les nouvelles évaluations à l'état en mémoire
+    total_points_gagnes_ce_tour = 0
+    for eval_item in evaluations:
+        competence = eval_item.get("competence")
+        points = eval_item.get("points", 0)
+        
+        if not all([competence, isinstance(points, int)]):
+            continue # On ignore les items malformés
+
+        # On ajoute les points au score existant dans le state
+        current_score = state_profile["competences"].get(competence, 0)
+        state_profile["competences"][competence] = current_score + points
+        
+        total_points_gagnes_ce_tour += points
+        
+        # On ajoute le feedback à la liste
+        state_profile["feedbacks"].append({
+            "competence": competence,
+            "points": points,
+            "message": eval_item.get("feedback"),
+            "timestamp": "Now"
+        })
+    
+    # On met à jour le score global
+    state_profile["score_global"] += total_points_gagnes_ce_tour
+
+    # 4. On sauvegarde l'état mis à jour dans le contexte de l'ADK.
+    # C'est cette action qui garantit que l'UI verra les bonnes données.
+    tool_context.state["student_profile"] = state_profile
+    
+    # --- FIN DE LA CORRECTION MAJEURE ---
+
+    # --- MISE À JOUR DE LA BASE DE DONNÉES (pour la persistance à long terme) ---
     @sync_to_async
     def update_database_sync():
         try:
@@ -2194,73 +2073,38 @@ async def enregistrer_evaluations_multiples(evaluations_json: str, tool_context:
             domaine_obj = DomaineMedical.objects.get(nom__iexact=domaine_nom)
             niveau_comp, _ = NiveauCompetence.objects.get_or_create(profil_etudiant=profil, domaine=domaine_obj)
 
-            total_points_gagnes = 0
-            
+            # La logique ici reste la même, elle garantit la cohérence de la BDD
             for eval_item in evaluations:
                 competence = eval_item.get("competence")
                 points = eval_item.get("points", 0)
                 feedback = eval_item.get("feedback")
-                
-                if not all([competence, isinstance(points, int), feedback]):
-                    print(f"  -> Skipping invalid evaluation item: {eval_item}")
-                    continue # Ignore les items mal formés dans la liste
-                
-                total_points_gagnes += points
 
-                if competence == "anamnese":
-                    niveau_comp.score_anamnese += points
-                elif competence == "diagnostic":
-                    niveau_comp.score_diagnostic += points
-                elif competence == "traitement":
-                    niveau_comp.score_traitement += points
-                elif competence == "relationnel":
-                    niveau_comp.score_relationnel += points
+                if competence == "anamnese": niveau_comp.score_anamnese += points
+                elif competence == "diagnostic": niveau_comp.score_diagnostic += points
+                elif competence == "traitement": niveau_comp.score_traitement += points
+                elif competence == "relationnel": niveau_comp.score_relationnel += points
                 
-                if points < 0:
-                    if not isinstance(profil.lacunes_identifiees, list):
-                        profil.lacunes_identifiees = []
+                if points < 0 and feedback:
+                    if not isinstance(profil.lacunes_identifiees, list): profil.lacunes_identifiees = []
                     profil.lacunes_identifiees.append({"domaine": domaine_nom, "feedback": feedback, "competence": competence})
             
-            profil.xp_total += total_points_gagnes
+            profil.xp_total += total_points_gagnes_ce_tour
             profil.save()
             niveau_comp.save()
+            return {"success": True, "new_xp_db": profil.xp_total}
 
-            return {"success": True, "new_xp": profil.xp_total, "updated_competences": {
-                "anamnese": niveau_comp.score_anamnese, "diagnostic": niveau_comp.score_diagnostic,
-                "traitement": niveau_comp.score_traitement, "relationnel": niveau_comp.score_relationnel
-            }}
-
-        except ObjectDoesNotExist as e:
-            return {"success": False, "error": f"Donnée introuvable en base : {str(e)}"}
         except Exception as e:
-            return {"success": False, "error": f"Erreur DB inconnue : {str(e)}"}
+            return {"success": False, "error": str(e)}
 
     db_result = await update_database_sync()
 
     if not db_result["success"]:
-        return f"Échec de l'enregistrement en base de données : {db_result['error']}"
+        # Même si la BDD échoue, l'état de la session est à jour. On signale juste l'erreur.
+        return f"Échec de la persistance en base de données : {db_result['error']}"
 
-    state_profile = tool_context.state.get("student_profile", {})
-    state_profile["score_global"] = db_result["new_xp"]
-    state_profile["competences"] = db_result["updated_competences"]
-    
-    if "feedbacks" not in state_profile:
-        state_profile["feedbacks"] = []
-        
-    for eval_item in evaluations:
-        if eval_item.get("competence"): # N'ajoute pas de feedback si l'item était invalide
-            state_profile["feedbacks"].append({
-                "competence": eval_item.get("competence"),
-                "points": eval_item.get("points"),
-                "message": eval_item.get("feedback"),
-                "timestamp": "Now"
-            })
+    return f"✅ {len(evaluations)} évaluations traitées. XP Global (état session): {state_profile['score_global']}."// END OF FILE: module_expert/tools/scoring_tools.py
 
-    tool_context.state["student_profile"] = state_profile
-
-    return f"✅ {len(evaluations)} évaluations traitées. XP Global: {db_result['new_xp']}."// END OF FILE: module_expert/tools/scoring_tools.py
-
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/urls.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/urls.py
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -2284,7 +2128,7 @@ urlpatterns = [
 ]
 // END OF FILE: module_expert/urls.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_expert/views.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_expert/views.py
 
 from rest_framework import viewsets
 from drf_spectacular.utils import extend_schema
@@ -2323,14 +2167,14 @@ class EtapeCliniqueViewSet(viewsets.ModelViewSet):
     serializer_class = EtapeCliniqueSerializer
 // END OF FILE: module_expert/views.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/admin.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_interface/admin.py
 
 from django.contrib import admin
 
 # Register your models here.
 // END OF FILE: module_interface/admin.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/apps.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_interface/apps.py
 
 from django.apps import AppConfig
 
@@ -2339,64 +2183,15 @@ class ModuleInterfaceConfig(AppConfig):
     name = 'module_interface'
 // END OF FILE: module_interface/apps.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_interface/__init__.py
 
 // END OF FILE: module_interface/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/migrations/0001_initial.py
-
-# Generated by Django 6.0 on 2025-12-27 14:01
-
-import django.db.models.deletion
-import uuid
-from django.db import migrations, models
-
-
-class Migration(migrations.Migration):
-
-    initial = True
-
-    dependencies = [
-        ('module_apprenant', '0001_initial'),
-        ('module_expert', '0001_initial'),
-    ]
-
-    operations = [
-        migrations.CreateModel(
-            name='SessionApprentissage',
-            fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('date_debut', models.DateTimeField(auto_now_add=True)),
-                ('date_fin', models.DateTimeField(blank=True, null=True)),
-                ('score_session', models.IntegerField(default=0, null=True)),
-                ('apprenant', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='sessions', to='module_apprenant.apprenant')),
-                ('cas_clinique', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='sessions', to='module_expert.casclinique')),
-            ],
-        ),
-        migrations.CreateModel(
-            name='Interaction',
-            fields=[
-                ('id', models.UUIDField(default=uuid.uuid4, editable=False, primary_key=True, serialize=False)),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('question_contenu', models.TextField()),
-                ('reponse_contenu', models.TextField(blank=True)),
-                ('reponse_est_valide', models.BooleanField(null=True)),
-                ('feedback_contenu', models.TextField(blank=True)),
-                ('feedback_type', models.CharField(blank=True, choices=[('DIRECT', 'Direct'), ('SOCRATIQUE', 'Socratique'), ('SCAFFOLDING', 'Scaffolding')], max_length=20)),
-                ('session', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='interactions', to='module_interface.sessionapprentissage')),
-            ],
-            options={
-                'ordering': ['timestamp'],
-            },
-        ),
-    ]
-// END OF FILE: module_interface/migrations/0001_initial.py
-
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/migrations/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_interface/migrations/__init__.py
 
 // END OF FILE: module_interface/migrations/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/models_persistence.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_interface/models_persistence.py
 
 from django.db import models
 from django.contrib.auth import get_user_model
@@ -2434,7 +2229,7 @@ class SessionMemory(models.Model):
         return f"Memory {self.key} (scope: {self.scope})"
 // END OF FILE: module_interface/models_persistence.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/models.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_interface/models.py
 
 # module_interface/models.py
 
@@ -2489,10 +2284,11 @@ class Interaction(models.Model):
     def __str__(self):
         return f"Interaction du {self.timestamp.strftime('%Y-%m-%d %H:%M')}"// END OF FILE: module_interface/models.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/serializers.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_interface/serializers.py
 
 from rest_framework import serializers
 from .models import SessionApprentissage, Interaction
+from module_expert.serializers import CasCliniqueSerializer # <--- NOUVEL IMPORT
 
 class InteractionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -2500,21 +2296,31 @@ class InteractionSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class SessionApprentissageSerializer(serializers.ModelSerializer):
-    interactions = InteractionSerializer(many=True, read_only=True)
+    # --- MODIFICATIONS CI-DESSOUS ---
     
+    # On ajoute un champ qui va compter le nombre d'interactions
+    interaction_count = serializers.SerializerMethodField()
+    
+    # On remplace le simple ID du cas clinique par l'objet complet
+    cas_clinique = CasCliniqueSerializer(read_only=True)
+
     class Meta:
         model = SessionApprentissage
-        fields = '__all__'
-// END OF FILE: module_interface/serializers.py
+        # On ajoute les nouveaux champs à la liste des champs à sérialiser
+        fields = ['id', 'apprenant', 'cas_clinique', 'date_debut', 'date_fin', 'score_session', 'interaction_count']
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/tests.py
+    def get_interaction_count(self, obj):
+        # Cette méthode est appelée pour chaque session et compte les interactions associées
+        return obj.interactions.count()// END OF FILE: module_interface/serializers.py
+
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_interface/tests.py
 
 from django.test import TestCase
 
 # Create your tests here.
 // END OF FILE: module_interface/tests.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/urls.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_interface/urls.py
 
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
@@ -2529,17 +2335,25 @@ urlpatterns = [
 ]
 // END OF FILE: module_interface/urls.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_interface/views.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_interface/views.py
 
 from rest_framework import viewsets
 from drf_spectacular.utils import extend_schema
 from .models import SessionApprentissage, Interaction
 from .serializers import SessionApprentissageSerializer, InteractionSerializer
+from django_filters.rest_framework import DjangoFilterBackend
 
 @extend_schema(tags=['Interface - Sessions'])
 class SessionApprentissageViewSet(viewsets.ModelViewSet):
-    queryset = SessionApprentissage.objects.all()
+    queryset = SessionApprentissage.objects.all().order_by('-date_debut') # On trie par défaut
     serializer_class = SessionApprentissageSerializer
+    
+    # --- AJOUTS POUR LE FILTRAGE ---
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = {
+        'apprenant': ['exact'],
+        'cas_clinique__domaine__nom': ['iexact'],
+    }
 
 @extend_schema(tags=['Interface - Interactions'])
 class InteractionViewSet(viewsets.ModelViewSet):
@@ -2547,14 +2361,14 @@ class InteractionViewSet(viewsets.ModelViewSet):
     serializer_class = InteractionSerializer
 // END OF FILE: module_interface/views.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/admin.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/admin.py
 
 from django.contrib import admin
 
 # Register your models here.
 // END OF FILE: module_tuteur/admin.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/agent.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/agent.py
 
 from google.adk.agents import Agent
 from module_expert.constante import MODEL_NAME
@@ -2604,7 +2418,7 @@ tuteur_agent = Agent(
     output_key=KEY_TUTOR_FEEDBACK # Garde cette clé pour la sortie finale
 )// END OF FILE: module_tuteur/agent.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/apps.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/apps.py
 
 from django.apps import AppConfig
 
@@ -2613,28 +2427,28 @@ class ModuleTuteurConfig(AppConfig):
     name = 'module_tuteur'
 // END OF FILE: module_tuteur/apps.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/constante.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/constante.py
 
 # module_tuteur/constante.py
 MODEL_NAME = "NomDuModeleUtilise"  # Remplacez par le nom réel du modèle
 // END OF FILE: module_tuteur/constante.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/__init__.py
 
 // END OF FILE: module_tuteur/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/migrations/__init__.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/migrations/__init__.py
 
 // END OF FILE: module_tuteur/migrations/__init__.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/models.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/models.py
 
 from django.db import models
 
 # Create your models here.
 // END OF FILE: module_tuteur/models.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/orchestrator.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/orchestrator.py
 
 import asyncio
 from google.adk.runners import Runner
@@ -2770,7 +2584,7 @@ class TuteurOrchestrator:
 # Singleton
 orchestrator = TuteurOrchestrator()// END OF FILE: module_tuteur/orchestrator.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/serializers.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/serializers.py
 
 from rest_framework import serializers
 
@@ -2783,7 +2597,7 @@ class AnalyseReponseSerializer(serializers.Serializer):
     reponse_etudiant = serializers.CharField()
     etape_actuelle = serializers.CharField(required=False, default="Diagnostic")// END OF FILE: module_tuteur/serializers.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/services.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/services.py
 
 import uuid
 from asgiref.sync import sync_to_async
@@ -2861,7 +2675,7 @@ class SessionManager:
 # Instance singleton
 session_manager = SessionManager()// END OF FILE: module_tuteur/services.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/strategies.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/strategies.py
 
 from abc import ABC, abstractmethod
 import random
@@ -2932,14 +2746,14 @@ class StrategieScaffolding(StrategieApprentissage):
         return "SCAFFOLDING"
 // END OF FILE: module_tuteur/strategies.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/tests.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/tests.py
 
 from django.test import TestCase
 
 # Create your tests here.
 // END OF FILE: module_tuteur/tests.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/tools/expert_interface.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/tools/expert_interface.py
 
 from google.adk.tools import ToolContext
 from google.adk.runners import Runner
@@ -2967,7 +2781,7 @@ async def consulter_expert_medical(question: str, tool_context: ToolContext) -> 
     
     return result.final_response.content// END OF FILE: module_tuteur/tools/expert_interface.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/tools/introspection_tools.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/tools/introspection_tools.py
 
 import json
 from google.adk.tools import ToolContext
@@ -3034,7 +2848,7 @@ async def lire_analyse_expert(tool_context: ToolContext) -> str:
     
     return f"Voici le raisonnement de l'expert superviseur pour le dernier échange : \"{analyse}\""// END OF FILE: module_tuteur/tools/introspection_tools.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/urls.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/urls.py
 
 from django.urls import path
 from .views import TuteurViewSet
@@ -3059,7 +2873,7 @@ urlpatterns = [
    
 ]// END OF FILE: module_tuteur/urls.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/module_tuteur/views.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/module_tuteur/views.py
 
 from rest_framework import status
 from rest_framework.response import Response
@@ -3156,7 +2970,7 @@ class TuteurViewSet(ViewSet):
         except SessionApprentissage.DoesNotExist:
             return Response({"error": "Session Django introuvable"}, status=404)// END OF FILE: module_tuteur/views.py
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/requirements.txt
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/requirements.txt
 
 Django>=4.2,<5.0
 psycopg2-binary
@@ -3169,9 +2983,9 @@ google-adk
 python-dotenv
 adrf
 asyncpg
-// END OF FILE: requirements.txt
+django-filter// END OF FILE: requirements.txt
 
-//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/backend/wait_for_db.py
+//---> PATH: /home/mbogneng-junior/Documents/5GI/Projets/STI/STI_GLOBAL/backend/wait_for_db.py
 
 import time
 import psycopg2

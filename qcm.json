@@ -1,0 +1,125 @@
+{
+  "examen_titre": "Évaluation des Compétences Cliniques - Jeune Médecin",
+  "questions": [
+    {
+      "id": 1,
+      "competence": "Raisonnement Clinique",
+      "situation": "Un homme de 45 ans consulte pour une douleur thoracique aiguë apparue il y a 2 heures. Il est tabagique et stressé.",
+      "question": "Quelle question est la plus discriminante à poser en premier ?",
+      "options": [
+        { "texte": "La douleur est-elle augmentée par l'inspiration profonde ou la toux ?", "score": 10, "feedback": "Excellent. Permet d'éliminer immédiatement une cause mécanique ou pleurale." },
+        { "texte": "Ressentez-vous une douleur qui irradie dans le bras gauche ou la mâchoire ?", "score": 8, "feedback": "Bon reflexe, mais l'absence d'irradiation n'élimine pas l'urgence vitale." },
+        { "texte": "Avez-vous des antécédents familiaux de maladies cardiaques ?", "score": 6, "feedback": "Important pour le risque global, mais peu utile dans l'urgence immédiate." },
+        { "texte": "Avez-vous mangé quelque chose d'épicé avant la douleur ?", "score": 4, "feedback": "Trop orienté vers une cause digestive sans avoir éliminé le pronostic vital." }
+      ]
+    },
+    {
+      "id": 2,
+      "competence": "Justesse du Diagnostic",
+      "situation": "Une femme de 72 ans présente une confusion mentale soudaine et une incontinence urinaire. Pas de fièvre.",
+      "question": "Quel est le diagnostic le plus probable à évoquer en priorité ?",
+      "options": [
+        { "texte": "Infection urinaire atypique", "score": 10, "feedback": "C'est la cause la plus fréquente de confusion chez le sujet âgé, même sans fièvre." },
+        { "texte": "Accident Vasculaire Cérébral (AVC)", "score": 7, "feedback": "À suspecter, mais l'association avec l'incontinence oriente d'abord vers le métabolique/infectieux." },
+        { "texte": "Déshydratation modérée", "score": 6, "feedback": "Cause fréquente, mais n'explique pas les signes urinaires spécifiques." },
+        { "texte": "Début de maladie d'Alzheimer", "score": 2, "feedback": "Erreur : Alzheimer est une maladie chronique, pas une confusion soudaine." }
+      ]
+    },
+    {
+      "id": 3,
+      "competence": "Pertinence de l'ordonnance",
+      "situation": "Patiente de 28 ans avec cystite simple. Elle est enceinte de 4 mois.",
+      "question": "Quel traitement prescrivez-vous ?",
+      "options": [
+        { "texte": "Fosfomycine trométamol en dose unique", "score": 10, "feedback": "Recommandation de première intention : efficace et sans risque pour le fœtus." },
+        { "texte": "Amoxicilline pendant 7 jours", "score": 7, "feedback": "Sûr, mais durée plus longue et risque de résistance bactérienne élevé." },
+        { "texte": "Ciprofloxacine pendant 3 jours", "score": 3, "feedback": "À éviter pendant la grossesse sauf si aucune autre alternative." },
+        { "texte": "Apport hydrique important et surveillance", "score": 2, "feedback": "Insuffisant chez la femme enceinte : risque élevé de pyélonéphrite." }
+      ]
+    },
+    {
+      "id": 4,
+      "competence": "Empathie",
+      "situation": "Un patient murmure après un diagnostic grave : 'Je ne sais pas comment je vais l'annoncer à mes enfants'.",
+      "question": "Quelle est la réponse la plus adaptée ?",
+      "options": [
+        { "texte": "C'est une étape difficile. Qu'est-ce qui vous inquiète le plus dans cette annonce ?", "score": 10, "feedback": "Parfait. Vous validez l'émotion et ouvrez un espace de parole." },
+        { "texte": "Voulez-vous que je leur explique moi-même lors d'un prochain rendez-vous ?", "score": 6, "feedback": "Proposition d'aide concrète, mais court-circuite le besoin d'expression du patient." },
+        { "texte": "Ne vous inquiétez pas, les enfants sont très résilients.", "score": 4, "feedback": "Rassurance banalisante qui minimise le ressenti du patient." },
+        { "texte": "Il existe des brochures dans la salle d'attente sur ce sujet.", "score": 3, "feedback": "Trop froid et technique face à une détresse émotionnelle." }
+      ]
+    },
+    {
+      "id": 5,
+      "competence": "Raisonnement Clinique",
+      "situation": "Patient de 60 ans se plaignant de vertiges au lever brusque du lit.",
+      "question": "Quelle est l'étape physique indispensable ?",
+      "options": [
+        { "texte": "Mesurer la pression artérielle couchée puis après 3 min debout", "score": 10, "feedback": "Indispensable pour confirmer une hypotension orthostatique." },
+        { "texte": "Réaliser une manœuvre de Dix-Hallpike", "score": 7, "feedback": "Utile pour le vertige positionnel, mais la posture debout oriente vers le cardio." },
+        { "texte": "Vérifier la glycémie à jeun", "score": 5, "feedback": "Peu probable que ce soit la cause principale liée au mouvement." },
+        { "texte": "Prescrire une IRM cérébrale immédiatement", "score": 2, "feedback": "Examen coûteux et non indiqué sans signe neurologique focal." }
+      ]
+    },
+    {
+      "id": 6,
+      "competence": "Justesse du Diagnostic",
+      "situation": "Enfant de 4 ans, fièvre 39°C, vésicules sur les mains, les pieds et dans la bouche.",
+      "question": "Quel est le diagnostic ?",
+      "options": [
+        { "texte": "Syndrome Pieds-Mains-Bouche", "score": 10, "feedback": "La triade est classique et caractéristique." },
+        { "texte": "Herpangine", "score": 6, "feedback": "L'herpangine n'affecte que la bouche, pas les extrémités." },
+        { "texte": "Varicelle", "score": 5, "feedback": "La distribution est normalement plus diffuse sur le tronc." },
+        { "texte": "Scarlatine", "score": 4, "feedback": "Donne un exanthème granuleux, pas de vésicules." }
+      ]
+    },
+    {
+      "id": 7,
+      "competence": "Pertinence de l'ordonnance",
+      "situation": "Homme de 55 ans, hypertendu et asthmatique, nécessite un traitement de fond pour migraines.",
+      "question": "Quel médicament est contre-indiqué ?",
+      "options": [
+        { "texte": "Propranolol", "score": 0, "feedback": "DANGER : Le bêta-bloquant peut déclencher une crise d'asthme sévère." },
+        { "texte": "Amitriptyline", "score": 10, "feedback": "Très bonne option de fond pour la migraine chez ce profil de patient." },
+        { "texte": "Sumatriptan", "score": 7, "feedback": "Correct pour les crises, mais demande de surveiller l'hypertension." },
+        { "texte": "Paracétamol", "score": 5, "feedback": "Sans danger, mais souvent inefficace en traitement de fond." }
+      ]
+    },
+    {
+      "id": 8,
+      "competence": "Empathie",
+      "situation": "Un patient crie car il attend depuis 2 heures en salle d'attente.",
+      "question": "Quelle est l'attitude la plus professionnelle ?",
+      "options": [
+        { "texte": "Je comprends votre frustration, l'attente a été anormalement longue.", "score": 10, "feedback": "La reconnaissance de l'émotion désamorce l'agressivité." },
+        { "texte": "J'ai eu des urgences graves à gérer, je fais ce que je peux.", "score": 5, "feedback": "Défensif. Le patient se sent moins prioritaire." },
+        { "texte": "S'excuser sans le regarder en continuant à travailler sur l'ordinateur.", "score": 3, "feedback": "Perçu comme du mépris ou un manque d'intérêt." },
+        { "texte": "Lui demander de se calmer sinon vous ne le recevez pas.", "score": 2, "feedback": "Escalade le conflit et rompt la relation médecin-patient." }
+      ]
+    },
+    {
+      "id": 9,
+      "competence": "Raisonnement Clinique",
+      "situation": "Femme de 22 ans, douleur abdominale basse à droite. Apyrétique (pas de fièvre).",
+      "question": "Quelle information est la plus cruciale ?",
+      "options": [
+        { "texte": "La date des dernières règles", "score": 10, "feedback": "Vital pour éliminer une Grossesse Extra-Utérine (GEU)." },
+        { "texte": "La présence de nausées ou vomissements", "score": 8, "feedback": "Très utile pour l'appendicite, mais la GEU est l'urgence absolue." },
+        { "texte": "L'intensité de la douleur sur une échelle de 1 à 10", "score": 6, "feedback": "Utile pour la surveillance, mais n'aide pas au diagnostic." },
+        { "texte": "Vos habitudes alimentaires des dernières 24h", "score": 3, "feedback": "Peu discriminant dans ce tableau clinique." }
+      ]
+    },
+    {
+      "id": 10,
+      "competence": "Justesse du Diagnostic",
+      "situation": "H, 55 ans, fumeur, hémoptysie minime, perte de poids de 5kg. Radio : opacité hilaire.",
+      "question": "Quelle est la conduite à tenir ?",
+      "options": [
+        { "texte": "Scanner thoracique et fibroscopie bronchique", "score": 10, "feedback": "Urgence diagnostique pour suspicion de cancer bronchique." },
+        { "texte": "Demander des marqueurs tumoraux sanguins", "score": 4, "feedback": "Pas recommandés pour le diagnostic initial (manque de précision)." },
+        { "texte": "Refaire une radio dans 15 jours", "score": 3, "feedback": "Perte de chance inacceptable vu les signes d'alerte." },
+        { "texte": "Prescrire des antibiotiques (suspicion pneumonie)", "score": 2, "feedback": "Erreur grave : ne pas traiter 'à l'aveugle' face à une hémoptysie." }
+      ]
+    }
+  ]
+}

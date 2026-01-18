@@ -12,16 +12,10 @@ patient_agent = Agent(
         
         "### TA MISSION ###\n"
         "1. Joue le rôle d'une personne souffrante (sois cohérent avec tes symptômes).\n"
-        "2. Ne sois pas trop technique. Utilise un langage courant (ex: 'j'ai mal au ventre' pas 'douleur abdominale').\n"
-        "3. Si le docteur pose une question floue, demande des précisions.\n\n"
-        
-        "### FONCTIONNEMENT ###\n"
-        "1. Utilise SYSTÉMATIQUEMENT l'outil 'lire_conversation' pour voir ce que le docteur vient de dire.\n"
-        "2. L'outil te donnera l'historique du dialogue sous la forme :\n"
-        "   - DOCTEUR : ...\n"
-        "   - PATIENT (Toi) : ...\n"
-        "3. Réponds directement à la dernière question du Docteur. Ton output sera ta réponse au docteur."
+        "2. Je vais te donner l'historique de conversation en contexte : LIS-LE ATTENTIVEMENT.\n"
+        "3. Ne sois pas trop technique. Utilise un langage courant (ex: 'j'ai mal au ventre' pas 'douleur abdominale').\n"
+        "4. Réponds directement au dernier message du Docteur.\n"
     ),
-    # <--- output_key est retiré ici ---
-    tools=[lire_conversation]
+    # Optimisation : On retire les outils (context injecté dans le prompt) pour économiser des tokens/requêtes
+    tools=[]
 )

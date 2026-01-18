@@ -1,5 +1,6 @@
 import json
 from django.core.management.base import BaseCommand
+from django.db import connection
 from module_expert.models import DomaineMedical, CasClinique
 
 class Command(BaseCommand):
@@ -7,6 +8,25 @@ class Command(BaseCommand):
 
     def handle(self, *args, **kwargs):
         self.stdout.write("🚀 Démarrage de l'initialisation des données de référence...")
+
+        # -----------------------------------------------------------
+        # 0. CRÉATION TABLE SESSIONS ADK (Prévention Race Condition)
+        # -----------------------------------------------------------
+        self.stdout.write("🔧 Vérification de la table 'sessions' pour Google ADK...")
+        with connection.cursor() as cursor:
+            # Schéma exact utilisé par google.adk.sessions.DatabaseSessionService (SQLAlchemy)
+            cursor.execute("""
+                CREATE TABLE IF NOT EXISTS sessions (
+                    app_name VARCHAR(128) NOT NULL,
+                    user_id VARCHAR(128) NOT NULL,
+                    id VARCHAR(128) NOT NULL,
+                    state JSONB NOT NULL,
+                    create_time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                    update_time TIMESTAMP WITHOUT TIME ZONE NOT NULL,
+                    PRIMARY KEY (app_name, user_id, id)
+                );
+            """)
+        self.stdout.write("✅ Table 'sessions' prête.")
 
         # -----------------------------------------------------------
         # 1. CRÉATION DES DOMAINES MÉDICAUX

@@ -3,7 +3,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate
-from module_apprenant.models import Apprenant
+from module_apprenant.models import Apprenant, ProfilEtudiant
 from module_expert.models import ExpertHumain, DomaineMedical
 
 class RegisterSerializer(serializers.ModelSerializer):
@@ -33,6 +33,10 @@ class RegisterSerializer(serializers.ModelSerializer):
             email=user_email,
             nom=apprenant_nom
         )
+        
+        # Création automatique du ProfilEtudiant (importé en haut)
+        ProfilEtudiant.objects.create(apprenant=apprenant)
+        
         return apprenant
 
 class LoginSerializer(serializers.Serializer):

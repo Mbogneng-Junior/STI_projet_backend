@@ -1,0 +1,18 @@
+
+
+
+find . -path "*/migrations/*.py" -not -name "__init__.py" -delete
+find . -path "*/migrations/*.pyc"  -delete
+
+psql -U doadmin -h backendsti-do-user-27633477-0.h.db.ondigitalocean.com -p 25060 -d defaultdb
+
+DO $$ DECLARE
+    r RECORD;
+BEGIN
+    FOR r IN (SELECT tablename FROM pg_tables WHERE schemaname = 'public') LOOP
+        EXECUTE 'DROP TABLE IF EXISTS ' || quote_ident(r.tablename) || ' CASCADE';
+    END LOOP;
+END $$;
+
+
+docker compose -f docker-compose.yml exec web python manage.py makemigrations module_apprenant module_expert module_interface module_auth

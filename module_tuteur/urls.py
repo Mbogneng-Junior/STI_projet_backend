@@ -17,6 +17,14 @@ urlpatterns = [
         TuteurViewSet.as_view({'post': 'analyser_reponse'}), 
         name='tuteur-analyser-reponse'
     ),
+    
+    # Route pour terminer la session (POST)
+    path(
+        'session/end/', 
+        TuteurViewSet.as_view({'post': 'terminer_session'}), 
+        name='tuteur-end-session'
+    ),
+
     path('session/<str:session_id>/state/', TuteurViewSet.as_view({'get': 'get_state'})),
    
 ]

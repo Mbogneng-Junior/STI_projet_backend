@@ -39,12 +39,22 @@ class LoginView(APIView):
         # Créer ou récupérer le token
         token, created = Token.objects.get_or_create(user=apprenant.user)
         
+        # Vérifier si le profil existe (legacy support)
+        est_profile = False
+        try:
+            if hasattr(apprenant, 'profil'):
+                est_profile = apprenant.profil.est_profile
+        except Exception:
+            # Si le profil n'existe pas (RelatedObjectDoesNotExist), on considère False
+            est_profile = False
+
         return Response({
             'token': token.key,
             'apprenant': {
                 'id': apprenant.id,
                 'nom': apprenant.nom,
                 'email': apprenant.email,
+                'est_profile': est_profile
             }
         })
 

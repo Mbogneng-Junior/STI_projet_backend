@@ -57,19 +57,44 @@ class CasClinique(models.Model):
         EXPERT = 'EXPERT', 'Expert'
 
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id_unique = models.CharField(max_length=50, unique=True, null=True, blank=True)
+    
     titre = models.CharField(max_length=255)
     statut = models.CharField(max_length=20, choices=StatutCas.choices, default=StatutCas.BROUILLON_IA)
     difficulte = models.CharField(max_length=20, choices=NiveauDifficulté.choices)
-    donnees_patient = models.JSONField()
-    historique_medical = models.TextField()
-    solution_experte = models.TextField()
-    date_validation = models.DateTimeField(blank=True, null=True)
-    source_fultang_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+    
     domaine = models.ForeignKey(
         DomaineMedical, 
         on_delete=models.PROTECT, 
         related_name="cas_cliniques"
     )
+
+    # Données médicales structurées
+    pathologie = models.CharField(max_length=255, blank=True)
+    donnees_patient = models.JSONField(help_text="Données personnelles: age, sexe, profession...")
+    motif_consultation = models.TextField(blank=True)
+    mode_de_vie = models.JSONField(default=dict, blank=True)
+    antecedents_medicaux = models.JSONField(default=dict, blank=True)
+    
+    # Signes et Examens
+    symptomes = models.JSONField(default=list, blank=True)
+    diagnostics_physiques = models.JSONField(default=list, blank=True)
+    examens_complementaires = models.JSONField(default=list, blank=True)
+    
+    # Résolution
+    diagnostic_final = models.CharField(max_length=255, blank=True)
+    traitement = models.JSONField(default=list, blank=True)
+    
+    # Pédagogie
+    objectifs_pedagogiques = models.JSONField(default=list, blank=True)
+    indices_cliniques = models.JSONField(default=list, blank=True)
+    erreurs_courantes = models.JSONField(default=list, blank=True)
+    
+    # Champs existants ou calculés
+    solution_experte = models.TextField(blank=True, help_text="Résumé global de la solution")
+    historique_medical = models.TextField(blank=True, null=True) # Gardé pour compatibilité temporaire
+    date_validation = models.DateTimeField(blank=True, null=True)
+    source_fultang_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
 
     def __str__(self):
         return self.titre
