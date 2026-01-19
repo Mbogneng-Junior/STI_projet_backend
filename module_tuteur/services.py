@@ -23,17 +23,19 @@ class SessionManager:
             session = await SessionApprentissage.objects.select_related('apprenant').aget(id=session_id)
             profil, _ = await ProfilEtudiant.objects.aget_or_create(apprenant=session.apprenant)
 
-            # 1. Création de l'évaluation sommative
-            await EvaluationSommative.objects.acreate(
+            # 1. Création de l'évaluation sommative (ou mise à jour si existe déjà)
+            await EvaluationSommative.objects.aupdate_or_create(
                 session=session,
-                score_global=bilan_data.get('score_global', 0),
-                score_diagnostic=bilan_data.get('score_diagnostic', 0),
-                score_anamnese=bilan_data.get('score_anamnese', 0),
-                score_prise_en_charge=bilan_data.get('score_prise_en_charge', 0),
-                score_communication=bilan_data.get('score_communication', 0),  # Nouveau champ si ajouté au modèle
-                difficultes_identifiees=bilan_data.get('points_faibles', []),
-                points_forts=bilan_data.get('points_forts', []),
-                feedback_global=bilan_data.get('feedback_global', "")
+                defaults={
+                    "score_global": bilan_data.get('score_global', 0),
+                    "score_diagnostic": bilan_data.get('score_diagnostic', 0),
+                    "score_anamnese": bilan_data.get('score_anamnese', 0),
+                    "score_prise_en_charge": bilan_data.get('score_prise_en_charge', 0),
+                    "score_communication": bilan_data.get('score_communication', 0),
+                    "difficultes_identifiees": bilan_data.get('points_faibles', []),
+                    "points_forts": bilan_data.get('points_forts', []),
+                    "feedback_global": bilan_data.get('feedback_global', "")
+                }
             )
 
             # 2. Mise à jour de la session

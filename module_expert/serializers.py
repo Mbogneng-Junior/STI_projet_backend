@@ -23,6 +23,7 @@ class EtapeCliniqueSerializer(serializers.ModelSerializer):
 
 class CasCliniqueSerializer(serializers.ModelSerializer):
     etapes = EtapeCliniqueSerializer(many=True, read_only=True)
+    domaine_nom = serializers.CharField(source='domaine.nom', read_only=True)
     
     class Meta:
         model = CasClinique

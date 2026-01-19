@@ -80,10 +80,44 @@ class TuteurOrchestrator:
 
         # 3. Appeler l'agent sommatif via un Runner éphémère
         response_text = ""
-        runner = Runner(agent=summative_agent) # Agent importé depuis evaluation_agent
-        async for event in runner.run_async(new_message=Content(parts=[Part(text=prompt)])):
-             if event.part and event.part.text:
-                response_text += event.part.text
+        # Pour une évaluation ponctuelle sans session persistante, on peut utiliser Model.generate_content
+        # ou un runner avec une session en mémoire pour cet agent.
+        # Ici on utilise model.generate_content() directement via l'agent (plus simple pour du one-shot)
+        
+        # NOTE: agent.model.generate_content_async attend "contents"
+        # On peut aussi utiliser un runner mais il faut lui passer un session_service 
+        # (même si on ne veut pas persisté, le Runner l'exige souvent dans les versions récentes du SDK).
+        # On va utiliser le session_service passé en paramètre, mais avec un new ID temporaire pour ne pas polluer.
+        
+        temp_eval_id = f"eval-temp-{session_id}"
+
+        # Création explicite de la session temporaire avant exécution
+        try:
+            # On essaie de créer la session. Si elle existe, cela peut lever une erreur selon l'implémentation.
+            # Dans le doute, on ignore l'erreur de duplication.
+            # L'argument app_name est OBLIGATOIRE.
+            await session_service.create_session(app_name="sti_app", session_id=temp_eval_id, user_id=user_id)
+        except Exception as e:
+            # Si erreur (ex: exist déjà), on logue pour debug mais on continue voir si le Runner la trouve
+            logger.warning(f"Warning creation session temp: {str(e)}")
+            pass
+
+        runner = Runner(
+            agent=summative_agent,
+            app_name="sti_app", 
+            session_service=session_service
+        )
+        
+        # Exécution dans une session temporaire distincte de la session du patient
+        async for event in runner.run_async(
+            new_message=Content(parts=[Part(text=prompt)]),
+            session_id=temp_eval_id,
+            user_id=user_id
+        ):
+             if event.content and event.content.parts:
+                 for part in event.content.parts:
+                     if part.text:
+                         response_text += part.text
 
         # 4. Parser le JSON
         try:
@@ -128,7 +162,12 @@ class TuteurOrchestrator:
         runner_patient = Runner(agent=patient_agent, app_name="sti_app", session_service=session_service)
         
         reponse_patient_text = "Le patient n'a pas pu formuler de réponse."
-        async for event in runner_patient.run_async(user_id=user_id, session_id=session_id, new_message=Content(parts=[Part(text=prompt_with_context)])):
+        # Pour le run du Patient, on utilise la session principale
+        async for event in runner_patient.run_async(
+            user_id=user_id, 
+            session_id=session_id, 
+            new_message=Content(parts=[Part(text=prompt_with_context)])
+        ):
             if event.is_final_response() and event.content and event.content.parts:
                 reponse_patient_text = event.content.parts[0].text.strip('" ') # Nettoyage des guillemets
                 break

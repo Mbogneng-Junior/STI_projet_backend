@@ -4,7 +4,7 @@ from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema
 from .models import Apprenant, Badge, ProfilEtudiant, NiveauCompetence, QuestionProfiling
 from module_expert.models import DomaineMedical
-from module_interface.models_persistence import PersistentSession
+from module_interface.models import SessionApprentissage, EvaluationSommative
 from django.db.models import Avg
 from .serializers import (
     ApprenantSerializer, 
@@ -185,23 +185,34 @@ class StudentDashboardViewSet(viewsets.ViewSet):
         user = request.user
         
         # 1. Global Stats (Sessions)
-        # Assuming PersistentSession links to User
-        sessions = PersistentSession.objects.filter(user=user)
+        try:
+             apprenant = user.apprenant
+        except AttributeError:
+             # Fallback for admins or users without 'apprenant' profile
+             return Response({
+                "global_stats": {"cas_completes": 0, "score_moyen": 0, "temps_etude": 0, "jours_consecutifs": 0},
+                "proficiency_data": [],
+                "difficulties": []
+            })
+
+        sessions = SessionApprentissage.objects.filter(apprenant=apprenant)
         total_sessions = sessions.count()
         
-        # Calculate streaks or other metrics (mocked for now as models don't support it well yet)
-        streak_days = 5 # Placeholder
-        study_time = 4.2 # Placeholder
+        # Calculate streaks or other metrics 
+        streak_days = 5 
+        study_time = 4.2
         avg_score = 0
         
-        # 2. Proficiency (NiveauCompetence)
+        # 2. Proficiency & Difficulties
         proficiency_data = []
+        difficulties_list = []
+
         try:
-            if hasattr(user, 'apprenant') and hasattr(user.apprenant, 'profil'):
-                profil = user.apprenant.profil
+            if hasattr(apprenant, 'profil'):
+                profil = apprenant.profil
                 competences = NiveauCompetence.objects.filter(profil_etudiant=profil)
                 
-                # Aggregate scores across all domains for the main 4 categories
+                # Aggregate scores
                 if competences.exists():
                     scores = competences.aggregate(
                         avg_anamnese=Avg('score_anamnese'),
@@ -210,53 +221,66 @@ class StudentDashboardViewSet(viewsets.ViewSet):
                         avg_relationnel=Avg('score_relationnel'),
                         avg_total=Avg('progression_globale')
                     )
-                    
                     avg_score = scores['avg_total'] or 0
                     
                     proficiency_data = [
                         {
-                            "id": "clinical_knowledge",
-                            "label": "Connaissances Cliniques", 
+                            "id": "communication",
+                            "label": "Communication",
+                            "value": int(scores['avg_relationnel'] or 0),
+                            "color": "from-green-500 to-emerald-500",
+                            "bgColor": "bg-green-50",
+                            "description": "Capacité relationnelle et empathie"
+                        },
+                         {
+                            "id": "anamnese",
+                            "label": "Anamnèse", 
                             "value": int(scores['avg_anamnese'] or 0),
                             "color": "from-red-500 to-rose-500",
                             "bgColor": "bg-red-50",
-                            "description": "Capacité recueillir l'anamnèse"
+                            "description": "Qualité de l'interrogatoire médical"
                         },
                         {
-                            "id": "differential_diagnosis",
-                            "label": "Diagnostic Différentiel",
+                            "id": "diagnostic",
+                            "label": "Diagnostic",
                             "value": int(scores['avg_diagnostic'] or 0),
                             "color": "from-blue-500 to-indigo-500",
                             "bgColor": "bg-blue-50",
-                            "description": "Précision des hypothèses"
+                            "description": "Pertinence des hypothèses"
                         },
-                        {
-                            "id": "treatment",
+                         {
+                            "id": "prise_en_charge",
                             "label": "Prise en Charge",
                             "value": int(scores['avg_traitement'] or 0),
                             "color": "from-amber-500 to-orange-500",
                             "bgColor": "bg-amber-50",
-                            "description": "Pertinence du traitement"
-                        },
-                        {
-                            "id": "communication",
-                            "label": "Relationnel",
-                            "value": int(scores['avg_relationnel'] or 0),
-                            "color": "from-green-500 to-emerald-500",
-                            "bgColor": "bg-green-50",
-                            "description": "Empathie et communication"
+                            "description": "Stratégie thérapeutique"
                         }
                     ]
+
+            # Fetch Difficulties from Evaluations
+            evaluations = EvaluationSommative.objects.filter(session__apprenant=apprenant).order_by('-date_evaluation')
+            all_difficulties = []
+            for eval in evaluations:
+                if eval.difficultes_identifiees:
+                   # Ensure it's a list
+                   diffs = eval.difficultes_identifiees if isinstance(eval.difficultes_identifiees, list) else []
+                   all_difficulties.extend(diffs)
+            
+            # Deduplicate and take top 10 unique
+            seen = set()
+            difficulties_list = [x for x in all_difficulties if not (x in seen or seen.add(x))][:10]
+
         except Exception as e:
-            print(f"Error fetching proficiency: {e}")
+            print(f"Error fetching stats: {e}")
             
         # Default mock if empty
         if not proficiency_data:
             proficiency_data = [
-                {"id": "clinical_knowledge", "label": "Connaissances Cliniques", "value": 0, "color": "from-red-500 to-rose-500", "bgColor": "bg-red-50", "description": "Aucune donnée"},
-                {"id": "differential_diagnosis", "label": "Diagnostic", "value": 0, "color": "from-blue-500 to-indigo-500", "bgColor": "bg-blue-50", "description": "Aucune donnée"},
-                {"id": "treatment", "label": "Traitement", "value": 0, "color": "from-amber-500 to-orange-500", "bgColor": "bg-amber-50", "description": "Aucune donnée"},
-                {"id": "communication", "label": "Relationnel", "value": 0, "color": "from-green-500 to-emerald-500", "bgColor": "bg-green-50", "description": "Aucune donnée"}
+                {"id": "communication", "label": "Communication", "value": 0, "color": "from-green-500 to-emerald-500", "bgColor": "bg-green-50", "description": "Aucune donnée"},
+                {"id": "anamnese", "label": "Anamnèse", "value": 0, "color": "from-red-500 to-rose-500", "bgColor": "bg-red-50", "description": "Aucune donnée"},
+                {"id": "diagnostic", "label": "Diagnostic", "value": 0, "color": "from-blue-500 to-indigo-500", "bgColor": "bg-blue-50", "description": "Aucune donnée"},
+                {"id": "prise_en_charge", "label": "Prise en Charge", "value": 0, "color": "from-amber-500 to-orange-500", "bgColor": "bg-amber-50", "description": "Aucune donnée"}
             ]
 
         return Response({
@@ -266,5 +290,35 @@ class StudentDashboardViewSet(viewsets.ViewSet):
                 "temps_etude": study_time,
                 "jours_consecutifs": streak_days
             },
-            "proficiency_data": proficiency_data
+            "proficiency_data": proficiency_data,
+            "difficulties": difficulties_list
         })
+
+    @action(detail=False, methods=['get'])
+    def sessions(self, request):
+        """
+        Retourne la liste des sessions d'apprentissage passées de l'apprenant.
+        """
+        user = request.user
+        try:
+            apprenant = user.apprenant
+        except AttributeError:
+            return Response([])
+
+        sessions = SessionApprentissage.objects.filter(apprenant=apprenant).select_related('cas_clinique', 'cas_clinique__domaine', 'evaluation').order_by('-date_debut')
+        
+        data = []
+        for session in sessions:
+            eval_obj = getattr(session, 'evaluation', None)
+            score = eval_obj.score_global if eval_obj else 0
+            
+            data.append({
+                "id": str(session.id),
+                "cas_titre": session.cas_clinique.titre if session.cas_clinique else "Session libre",
+                "domaine": session.cas_clinique.domaine.nom if (session.cas_clinique and session.cas_clinique.domaine) else "Général",
+                "date": session.date_debut,
+                "score": score,
+                "status": "Terminée" if session.date_fin else "En cours"
+            })
+            
+        return Response(data)

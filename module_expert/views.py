@@ -1,4 +1,4 @@
-from rest_framework import viewsets
+from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db.models import Count, Avg, F
@@ -17,6 +17,13 @@ import json
 class DomaineMedicalViewSet(viewsets.ModelViewSet):
     queryset = DomaineMedical.objects.all()
     serializer_class = DomaineMedicalSerializer
+    
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            permission_classes = [permissions.AllowAny]
+        else:
+            permission_classes = [permissions.IsAuthenticated]
+        return [permission() for permission in permission_classes]
 
 @extend_schema(tags=['Expert - Experts Humains'])
 class ExpertHumainViewSet(viewsets.ModelViewSet):
@@ -38,8 +45,8 @@ class CasCliniqueViewSet(viewsets.ModelViewSet):
         queryset = super().get_queryset()
         
         # Filter by Expert's domain if applicable
-        if self.request.user.is_authenticated and hasattr(self.request.user, 'experthumain'):
-            queryset = queryset.filter(domaine=self.request.user.experthumain.domaine_expertise)
+        # if self.request.user.is_authenticated and hasattr(self.request.user, 'experthumain'):
+        #     queryset = queryset.filter(domaine=self.request.user.experthumain.domaine_expertise)
 
         status = self.request.query_params.get('status')
         if status:
