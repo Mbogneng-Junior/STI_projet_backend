@@ -1,0 +1,70 @@
+{
+  "metadata": {
+    "total_patients": 50,
+    "repartition": {
+      "jeunes_adultes_16_35": 25,
+      "adultes_36_55": 15,
+      "seniors_56_plus": 10
+    },
+    "sexe": {
+      "M": 25,
+      "F": 25
+    }
+  },
+
+  "patients": [
+    {"id": 1, "age_min": 15, "age_max": 20, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "paludisme_grave"},
+    {"id": 2, "age_min": 15, "age_max": 20, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "paludisme_grave"},
+    {"id": 3, "age_min":15, "age_max": 20, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "paludisme_simple"},
+    {"id": 4, "age_min": 15, "age_max": 20, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "paludisme_simple"},
+    {"id": 5, "age_min": 15, "age_max": 20, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "gastro_enterite"},
+    {"id": 6, "age_min": 15, "age_max": 20, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "gastro_enterite"},
+    {"id": 7, "age_min": 15, "age_max": 20, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "fievre_typhoide"},
+    {"id": 8, "age_min": 15, "age_max": 20, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "fievre_typhoide"},
+    {"id": 9, "age_min": 15, "age_max": 20, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "pneumonie"},
+    {"id": 10, "age_min": 15, "age_max": 20, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "pneumonie"},
+
+    {"id": 11, "age_min": 18, "age_max": 25, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "paludisme_simple"},
+    {"id": 12, "age_min": 20, "age_max": 28, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "paludisme_simple"},
+    {"id": 13, "age_min": 22, "age_max": 30, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "fievre_typhoide"},
+    {"id": 14, "age_min": 18, "age_max": 26, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "fievre_typhoide"},
+    {"id": 15, "age_min": 20, "age_max": 30, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "infection_urinaire"},
+    {"id": 16, "age_min": 22, "age_max": 32, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "infection_urinaire"},
+    {"id": 17, "age_min": 25, "age_max": 35, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "infection_urinaire"},
+    {"id": 18, "age_min": 19, "age_max": 28, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "gastro_enterite"},
+    {"id": 19, "age_min": 24, "age_max": 34, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "gastro_enterite"},
+    {"id": 20, "age_min": 28, "age_max": 35, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "pneumonie"},
+    {"id": 21, "age_min": 16, "age_max": 22, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "paludisme_simple"},
+    {"id": 22, "age_min": 18, "age_max": 25, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "paludisme_simple"},
+    {"id": 23, "age_min": 30, "age_max": 35, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "hypertension_arterielle"},
+    {"id": 24, "age_min": 28, "age_max": 35, "sexe": "F", "categorie_age": "jeune_adulte", "pathologie": "diabete"},
+    {"id": 25, "age_min": 20, "age_max": 28, "sexe": "M", "categorie_age": "jeune_adulte", "pathologie": "fievre_typhoide"},
+
+    {"id": 26, "age_min": 38, "age_max": 48, "sexe": "M", "categorie_age": "adulte", "pathologie": "hypertension_arterielle"},
+    {"id": 27, "age_min": 40, "age_max": 50, "sexe": "F", "categorie_age": "adulte", "pathologie": "hypertension_arterielle"},
+    {"id": 28, "age_min": 42, "age_max": 52, "sexe": "M", "categorie_age": "adulte", "pathologie": "hypertension_arterielle"},
+    {"id": 29, "age_min": 45, "age_max": 55, "sexe": "F", "categorie_age": "adulte", "pathologie": "diabete"},
+    {"id": 30, "age_min": 40, "age_max": 50, "sexe": "M", "categorie_age": "adulte", "pathologie": "diabete"},
+    {"id": 31, "age_min": 48, "age_max": 55, "sexe": "F", "categorie_age": "adulte", "pathologie": "diabete"},
+    {"id": 32, "age_min": 36, "age_max": 45, "sexe": "M", "categorie_age": "adulte", "pathologie": "paludisme_simple"},
+    {"id": 33, "age_min": 38, "age_max": 48, "sexe": "F", "categorie_age": "adulte", "pathologie": "paludisme_simple"},
+    {"id": 34, "age_min": 40, "age_max": 52, "sexe": "M", "categorie_age": "adulte", "pathologie": "pneumonie"},
+    {"id": 35, "age_min": 45, "age_max": 55, "sexe": "F", "categorie_age": "adulte", "pathologie": "pneumonie"},
+    {"id": 36, "age_min": 36, "age_max": 44, "sexe": "M", "categorie_age": "adulte", "pathologie": "fievre_typhoide"},
+    {"id": 37, "age_min": 38, "age_max": 46, "sexe": "F", "categorie_age": "adulte", "pathologie": "infection_urinaire"},
+    {"id": 38, "age_min": 42, "age_max": 50, "sexe": "M", "categorie_age": "adulte", "pathologie": "gastro_enterite"},
+    {"id": 39, "age_min": 44, "age_max": 54, "sexe": "F", "categorie_age": "adulte", "pathologie": "gastro_enterite"},
+    {"id": 40, "age_min": 50, "age_max": 55, "sexe": "M", "categorie_age": "adulte", "pathologie": "paludisme_grave"},
+
+    {"id": 41, "age_min": 58, "age_max": 68, "sexe": "M", "categorie_age": "senior", "pathologie": "hypertension_arterielle"},
+    {"id": 42, "age_min": 60, "age_max": 72, "sexe": "F", "categorie_age": "senior", "pathologie": "hypertension_arterielle"},
+    {"id": 43, "age_min": 56, "age_max": 65, "sexe": "M", "categorie_age": "senior", "pathologie": "diabete"},
+    {"id": 44, "age_min": 62, "age_max": 75, "sexe": "F", "categorie_age": "senior", "pathologie": "diabete"},
+    {"id": 45, "age_min": 65, "age_max": 78, "sexe": "M", "categorie_age": "senior", "pathologie": "pneumonie"},
+    {"id": 46, "age_min": 58, "age_max": 70, "sexe": "F", "categorie_age": "senior", "pathologie": "pneumonie"},
+    {"id": 47, "age_min": 60, "age_max": 75, "sexe": "M", "categorie_age": "senior", "pathologie": "paludisme_grave"},
+    {"id": 48, "age_min": 68, "age_max": 80, "sexe": "F", "categorie_age": "senior", "pathologie": "paludisme_grave"},
+    {"id": 49, "age_min": 56, "age_max": 65, "sexe": "M", "categorie_age": "senior", "pathologie": "gastro_enterite"},
+    {"id": 50, "age_min": 58, "age_max": 68, "sexe": "F", "categorie_age": "senior", "pathologie": "infection_urinaire"}
+  ]
+}

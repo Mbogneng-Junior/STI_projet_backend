@@ -1,0 +1,30 @@
+{
+  "configuration_generale": {
+    "nombre_cas_a_generer": 200,
+    "repartition_sexe": { "M": 0.5, "F": 0.5 }
+  },
+  "distribution_age": {
+    "jeune_adulte": { 
+        "poids": 0.4, 
+        "min": 21, "max": 35 
+    },
+    "adulte": { 
+        "poids": 0.4, 
+        "min": 36, "max": 55 
+    },
+    "senior": { 
+        "poids": 0.2, 
+        "min": 56, "max": 85 
+    }
+  },
+  "distribution_pathologies": {
+    "paludisme_simple": 0.25,
+    "paludisme_grave": 0.10,
+    "gastro_enterite": 0.15,
+    "fievre_typhoide": 0.15,
+    "pneumonie": 0.10,
+    "hypertension_arterielle": 0.10,
+    "diabete": 0.10,
+    "infection_urinaire": 0.05
+  }
+}

@@ -47,6 +47,7 @@ INSTALLED_APPS = [
     'module_apprenant',
     'module_interface',
     'module_tuteur',
+    'extraction',  # Module d'extraction des cas cliniques
     'corsheaders',  # Add CORS headers to allow requests from all origins
 ]
 
@@ -92,7 +93,7 @@ DATABASES = {
         'USER': os.environ.get('DB_USER', 'backendsti'),
         'PASSWORD': os.environ.get('DB_PASSWORD', 'backendsti'),
         'HOST': os.environ.get('DB_HOST', 'localhost'), # Default to localhost for local dev
-        'PORT': os.environ.get('DB_PORT', '5432'),
+        'PORT': os.environ.get('DB_PORT', '5433'),
     }
 }
 
