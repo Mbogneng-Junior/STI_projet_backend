@@ -40,36 +40,72 @@ class CasCliniqueViewSet(viewsets.ModelViewSet):
     lookup_field = 'id_unique'
     permission_classes = [AllowAny]
     def get_queryset(self):
-        queryset = super().get_queryset()
+        # On commence par récupérer tous les cas
+        queryset = CasClinique.objects.all().select_related('domaine')
         
-        # Filter by Expert's domain if applicable
-        #if self.request.user.is_authenticated and hasattr(self.request.user, 'experthumain'):
-         #   queryset = queryset.filter(domaine=self.request.user.experthumain.domaine_expertise)
+        # 1. Filtre par domaine de l'expert (Si authentifié)
+        # Note: Enlève le commentaire si tu veux restreindre l'expert à sa spécialité
+        # if self.request.user.is_authenticated and hasattr(self.request.user, 'experthumain'):
+        #    queryset = queryset.filter(domaine=self.request.user.experthumain.domaine_expertise)
 
-        status = self.request.query_params.get('status')
-        if status:
-            queryset = queryset.filter(statut=status)
-        
-        # Add filtering logic here to match frontend filters
-        # keyword, min_age, max_age, gender, profession, symptom, pathologie, niveau, limit
+        # 2. Récupération des paramètres de l'URL
+        status_param = self.request.query_params.get('status')
         keyword = self.request.query_params.get('keyword')
-        if keyword:
-            queryset = queryset.filter(titre__icontains=keyword) | queryset.filter(pathologie__icontains=keyword)
-
         pathologie = self.request.query_params.get('pathologie')
+        specialite = self.request.query_params.get('specialite') # Nouveau
+        niveau = self.request.query_params.get('niveau')
+        gender = self.request.query_params.get('gender')
+        min_age = self.request.query_params.get('min_age')
+        max_age = self.request.query_params.get('max_age')
+        symptom = self.request.query_params.get('symptom')
+
+        # 3. Application des filtres simples
+        if status_param:
+            queryset = queryset.filter(statut=status_param)
         if pathologie:
             queryset = queryset.filter(pathologie__icontains=pathologie)
-
-        niveau = self.request.query_params.get('niveau')
+        if specialite and specialite != 'all':
+            queryset = queryset.filter(domaine__nom__icontains=specialite)
         if niveau:
-            queryset = queryset.filter(difficulte=niveau)
-
-        # JSON field filtering (PostgreSQL specific usually, but works in Django for JSONField)
-        gender = self.request.query_params.get('gender')
+            queryset = queryset.filter(difficulte=niveau.upper())
+        if keyword:
+            queryset = queryset.filter(Q(titre__icontains=keyword) | Q(pathologie__icontains=keyword))
         if gender:
              queryset = queryset.filter(donnees_patient__sexe=gender)
 
+        # 4. Filtres complexes sur JSONField (Âge et Symptômes)
+        # On utilise une liste d'IDs pour filtrer car les requêtes sur JSON list sont complexes
+        if min_age or max_age or symptom:
+            filtered_ids = []
+            for case in queryset:
+                keep = True
+                
+                # Vérification âge
+                age = case.donnees_patient.get('age')
+                if age is not None:
+                    if min_age and int(age) < int(min_age): keep = False
+                    if max_age and int(age) > int(max_age): keep = False
+                
+                # Vérification symptômes
+                if symptom:
+                    symptomes_du_cas = case.symptomes or []
+                    # On cherche si au moins un symptôme correspond
+                    found_symptom = False
+                    for s in symptomes_du_cas:
+                        nom_s = s.get('nom', '').lower() if isinstance(s, dict) else str(s).lower()
+                        if symptom.lower() in nom_s:
+                            found_symptom = True
+                            break
+                    if not found_symptom: keep = False
+                
+                if keep:
+                    filtered_ids.append(case.id)
+            
+            # On applique le filtre final sur le queryset
+            queryset = queryset.filter(id__in=filtered_ids)
+
         return queryset
+
 
     @action(detail=False, methods=['get'])
     def stats(self, request):
