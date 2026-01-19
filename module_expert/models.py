@@ -46,6 +46,7 @@ class CasClinique(models.Model):
     class StatutCas(models.TextChoices):
         BROUILLON_IA = 'BROUILLON_IA', 'Brouillon (IA)'
         EN_REVISION = 'EN_REVISION', 'En Révision'
+        EN_COURS = 'EN_COURS', 'En Cours'  # Expert travaille dessus
         PUBLIE = 'PUBLIE', 'Publié'
         REJETE = 'REJETE', 'Rejeté'
         ARCHIVE = 'ARCHIVE', 'Archivé'
@@ -95,6 +96,28 @@ class CasClinique(models.Model):
     historique_medical = models.TextField(blank=True, null=True) # Gardé pour compatibilité temporaire
     date_validation = models.DateTimeField(blank=True, null=True)
     source_fultang_id = models.CharField(max_length=255, blank=True, null=True, db_index=True)
+
+    # Champs pour le workflow de validation/rejet
+    expert_responsable = models.ForeignKey(
+        ExpertHumain,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name="cas_assignes",
+        help_text="Expert responsable du cas"
+    )
+    commentaire_expert = models.TextField(blank=True, help_text="Commentaire de l'expert")
+
+    # Champs pour le rejet (selon PDF: formulaire avec parties concernées et raisons)
+    raison_rejet = models.TextField(blank=True, help_text="Raison détaillée du rejet")
+    parties_concernees = models.JSONField(
+        default=list, blank=True,
+        help_text="Parties du cas concernées par le rejet"
+    )
+    email_notification_rejet = models.EmailField(
+        blank=True, null=True,
+        help_text="Email pour notification de rejet (Fultang)"
+    )
+    date_mise_en_cours = models.DateTimeField(blank=True, null=True)
 
     def __str__(self):
         return self.titre

@@ -1,0 +1,792 @@
+{
+  "paludisme_simple": {
+    "nom": "Paludisme simple",
+    "specialite": "Médecine générale",
+    "niveau_difficulte": "debutant",
+    "symptomes_possibles": [
+      {
+        "nom": "Fièvre",
+        "degre": "sévère",
+        "duree": "3 jours",
+        "description_patient": "J'ai très chaud, je tremble depuis 3 jours"
+      },
+      {
+        "nom": "Céphalées",
+        "localisation": "frontale",
+        "degre": "modéré",
+        "description_patient": "Ma tête me fait très mal, surtout devant"
+      },
+      {
+        "nom": "Frissons",
+        "frequence": "intermittents",
+        "description_patient": "Je tremble de froid par moments même quand il fait chaud"
+      },
+      {
+        "nom": "Courbatures",
+        "localisation": "diffuse",
+        "description_patient": "J'ai mal partout dans le corps, comme si on m'avait battu"
+      },
+      {
+        "nom": "Fatigue",
+        "degre": "modéré",
+        "description_patient": "Je me sens très faible, je n'arrive pas à travailler"
+      },
+      {
+        "nom": "Sueurs nocturnes",
+        "frequence": "chaque nuit",
+        "description_patient": "Je me réveille trempé de sueur la nuit"
+      }
+    ],
+    "examens": [
+      {
+        "nom": "Goutte épaisse",
+        "resultat_positif": "Trophozoïtes P. Falciparum +",
+        "interpretation": "Pathologique",
+        "anatomie": "Sang"
+      },
+      {
+        "nom": "TDR Paludisme",
+        "resultat_positif": "Positif",
+        "interpretation": "Pathologique",
+        "anatomie": "Sang"
+      }
+    ],
+    "diagnostics_physiques": [
+      {"nom": "Température", "resultat": "39-40°C"},
+      {"nom": "Splénomégalie", "resultat": "Rate palpable"},
+      {"nom": "Pâleur conjonctivale", "resultat": "Légère"}
+    ],
+    "indices_cliniques": [
+      "Fièvre intermittente avec frissons",
+      "Zone endémique palustre",
+      "Absence de moustiquaire",
+      "Saison des pluies"
+    ],
+    "erreurs_courantes": [
+      "Confondre avec une grippe",
+      "Ne pas demander la goutte épaisse",
+      "Traiter sans confirmation biologique"
+    ],
+    "traitement_attendu": [
+      {
+        "nom_medicament": "Coartem (Artéméther-Luméfantrine)",
+        "dosage": "20mg/120mg",
+        "forme": "Comprimé",
+        "frequence": "4 comprimés prise initiale, puis 8h après, puis Matin et Soir",
+        "duree": "3 jours",
+        "voie": "Orale",
+        "consigne": "Prendre avec un repas gras (lait, arachides) pour l'absorption"
+      },
+      {
+        "nom_medicament": "Paracétamol",
+        "dosage": "1 g",
+        "forme": "Comprimé",
+        "frequence": "Toutes les 6 heures si fièvre > 38.5°C",
+        "duree": "Tant que la fièvre persiste",
+        "voie": "Orale",
+        "consigne": "Espacer les prises de 4h minimum"
+      }
+    ]
+  },
+
+  "paludisme_grave": {
+    "nom": "Paludisme grave",
+    "specialite": "Urgences",
+    "niveau_difficulte": "intermediaire",
+    "symptomes_possibles": [
+      {
+        "nom": "Fièvre élevée",
+        "degre": "très sévère",
+        "duree": "5 jours",
+        "description_patient": "Je brûle de fièvre depuis 5 jours, ça ne descend pas"
+      },
+      {
+        "nom": "Vomissements",
+        "frequence": "répétés",
+        "description_patient": "Je vomis tout ce que je mange depuis 2 jours"
+      },
+      {
+        "nom": "Confusion",
+        "evolution": "aggravation",
+        "description_patient": "Je ne sais plus très bien où je suis"
+      },
+      {
+        "nom": "Convulsions",
+        "frequence": "2 épisodes",
+        "description_patient": "J'ai eu des crises où je perdais connaissance"
+      },
+      {
+        "nom": "Prostration",
+        "degre": "sévère",
+        "description_patient": "Je n'arrive plus à me lever du lit"
+      },
+      {
+        "nom": "Ictère",
+        "localisation": "yeux et peau",
+        "description_patient": "On me dit que mes yeux sont devenus jaunes"
+      }
+    ],
+    "examens": [
+      {
+        "nom": "Goutte épaisse",
+        "resultat_positif": "P. Falciparum +++ (parasitémie élevée)",
+        "interpretation": "Pathologique",
+        "anatomie": "Sang"
+      },
+      {
+        "nom": "Hémoglobine",
+        "resultat_positif": "6 g/dL",
+        "valeur_normale": "12-16 g/dL",
+        "interpretation": "Anémie sévère",
+        "anatomie": "Sang"
+      },
+      {
+        "nom": "Glycémie",
+        "resultat_positif": "0.5 g/L",
+        "valeur_normale": "0.7-1.1 g/L",
+        "interpretation": "Hypoglycémie",
+        "anatomie": "Sang"
+      }
+    ],
+    "diagnostics_physiques": [
+      {"nom": "Température", "resultat": "40.5°C"},
+      {"nom": "État de conscience", "resultat": "Glasgow 10/15"},
+      {"nom": "Pâleur conjonctivale", "resultat": "Sévère"},
+      {"nom": "Splénomégalie", "resultat": "Importante"},
+      {"nom": "Ictère", "resultat": "Conjonctival et cutané"}
+    ],
+    "indices_cliniques": [
+      "Signes neurologiques (confusion, convulsions)",
+      "Anémie sévère",
+      "Fièvre prolongée sans traitement",
+      "Enfant ou femme enceinte"
+    ],
+    "erreurs_courantes": [
+      "Sous-estimer la gravité",
+      "Retarder le traitement parentéral",
+      "Ne pas rechercher l'hypoglycémie",
+      "Oublier la transfusion si anémie sévère"
+    ],
+     "traitement_attendu": [
+      {
+        "nom_medicament": "Artésunate",
+        "dosage": "2.4 mg/kg",
+        "forme": "Injectable (IV)",
+        "frequence": "À H0, H12, H24 puis une fois par jour",
+        "duree": "Jusqu'à reprise de la voie orale (min 24h)",
+        "voie": "Intraveineuse Lente",
+        "consigne": "Relais par voie orale dès que possible"
+      },
+      {
+        "nom_medicament": "Sérum Glucosé 5%",
+        "dosage": "500 ml",
+        "forme": "Perfusion",
+        "frequence": "En continu",
+        "duree": "Selon état d'hydratation",
+        "voie": "Intraveineuse",
+        "consigne": "Pour prévenir l'hypoglycémie et réhydrater"
+      },
+      {
+        "nom_medicament": "Relais : Coartem",
+        "dosage": "Standard",
+        "forme": "Comprimé",
+        "frequence": "Matin et Soir",
+        "duree": "3 jours après l'arrêt des injections",
+        "voie": "Orale",
+        "consigne": "Traitement de consolidation obligatoire"
+      }
+    ]
+  },
+
+  "fievre_typhoide": {
+    "nom": "Fièvre Typhoïde",
+    "specialite": "Médecine interne",
+    "niveau_difficulte": "intermediaire",
+    "symptomes_possibles": [
+      {
+        "nom": "Fièvre en plateau",
+        "duree": "1 semaine",
+        "description_patient": "La fièvre ne descend pas depuis une semaine, c'est toujours pareil"
+      },
+      {
+        "nom": "Douleurs abdominales",
+        "localisation": "fosse iliaque droite",
+        "description_patient": "J'ai mal au ventre, surtout du côté droit en bas"
+      },
+      {
+        "nom": "Constipation",
+        "duree": "4 jours",
+        "description_patient": "Je n'ai pas été à la selle depuis 4 jours"
+      },
+      {
+        "nom": "Céphalées",
+        "degre": "modéré",
+        "description_patient": "J'ai des maux de tête constants"
+      },
+      {
+        "nom": "Asthénie",
+        "degre": "sévère",
+        "description_patient": "Je suis épuisé, je n'ai plus de force"
+      },
+      {
+        "nom": "Anorexie",
+        "description_patient": "Je n'ai plus d'appétit du tout"
+      },
+      {
+        "nom": "Epistaxis",
+        "frequence": "occasionnel",
+        "description_patient": "J'ai eu le nez qui saigne hier"
+      }
+    ],
+    "examens": [
+      {
+        "nom": "Widal-Felix",
+        "resultat_positif": "TO 1/320, TH 1/160",
+        "interpretation": "Pathologique",
+        "anatomie": "Sang"
+      },
+      {
+        "nom": "Hémoculture",
+        "resultat_positif": "Salmonella typhi isolée",
+        "interpretation": "Pathologique",
+        "anatomie": "Sang"
+      },
+      {
+        "nom": "NFS",
+        "resultat_positif": "Leucopénie, thrombopénie",
+        "interpretation": "Anormal",
+        "anatomie": "Sang"
+      }
+    ],
+    "diagnostics_physiques": [
+      {"nom": "Température", "resultat": "39°C en plateau"},
+      {"nom": "Langue saburrale", "resultat": "Présente"},
+      {"nom": "Splénomégalie", "resultat": "Modérée"},
+      {"nom": "Abdomen", "resultat": "Sensibilité FID"},
+      {"nom": "Pouls", "resultat": "Dissociation pouls-température"}
+    ],
+    "indices_cliniques": [
+      "Fièvre prolongée en plateau",
+      "Constipation paradoxale (pas de diarrhée)",
+      "Consommation d'eau non traitée",
+      "Dissociation pouls-température"
+    ],
+    "erreurs_courantes": [
+      "Prescrire des antibiotiques sans confirmation",
+      "Confondre avec paludisme",
+      "Oublier les complications intestinales (perforation)",
+      "Ne pas rechercher les porteurs dans l'entourage"
+    ],
+    "traitement_attendu": [
+      {
+        "nom_medicament": "Ciprofloxacine",
+        "dosage": "500 mg",
+        "forme": "Comprimé",
+        "frequence": "Matin et Soir (toutes les 12h)",
+        "duree": "7 à 10 jours",
+        "voie": "Orale",
+        "consigne": "Ne pas prendre avec des produits laitiers"
+      },
+      {
+        "nom_medicament": "Paracétamol",
+        "dosage": "1 g",
+        "forme": "Comprimé",
+        "frequence": "Si fièvre ou douleurs",
+        "duree": "Symptomatique",
+        "voie": "Orale",
+        "consigne": ""
+      }
+    ]
+  },
+
+  "pneumonie": {
+    "nom": "Pneumonie",
+    "specialite": "Pneumologie",
+    "niveau_difficulte": "intermediaire",
+    "symptomes_possibles": [
+      {
+        "nom": "Toux productive",
+        "duree": "5 jours",
+        "description_patient": "Je tousse beaucoup et je crache du mucus jaunâtre"
+      },
+      {
+        "nom": "Fièvre",
+        "degre": "sévère",
+        "duree": "3 jours",
+        "description_patient": "J'ai de la fièvre depuis 3 jours"
+      },
+      {
+        "nom": "Dyspnée",
+        "degre": "modéré",
+        "description_patient": "J'ai du mal à respirer, je suis essoufflé"
+      },
+      {
+        "nom": "Douleur thoracique",
+        "localisation": "côté droit",
+        "description_patient": "J'ai mal à la poitrine quand je respire profondément"
+      },
+      {
+        "nom": "Frissons",
+        "description_patient": "J'ai eu des frissons intenses au début"
+      },
+      {
+        "nom": "Expectorations purulentes",
+        "description_patient": "Ce que je crache est devenu verdâtre"
+      }
+    ],
+    "examens": [
+      {
+        "nom": "Radio thorax",
+        "resultat_positif": "Foyer de condensation alvéolaire base droite",
+        "interpretation": "Pathologique",
+        "anatomie": "Poumon droit"
+      },
+      {
+        "nom": "NFS",
+        "resultat_positif": "GB 15000/mm³ à prédominance PNN",
+        "valeur_normale": "4000-10000/mm³",
+        "interpretation": "Hyperleucocytose",
+        "anatomie": "Sang"
+      },
+      {
+        "nom": "CRP",
+        "resultat_positif": "150 mg/L",
+        "valeur_normale": "<6 mg/L",
+        "interpretation": "Syndrome inflammatoire",
+        "anatomie": "Sang"
+      }
+    ],
+    "diagnostics_physiques": [
+      {"nom": "Température", "resultat": "39.5°C"},
+      {"nom": "Auscultation pulmonaire", "resultat": "Râles crépitants base droite"},
+      {"nom": "Fréquence respiratoire", "resultat": "28/min"},
+      {"nom": "Saturation O2", "resultat": "92%"},
+      {"nom": "Matité à la percussion", "resultat": "Base droite"}
+    ],
+    "indices_cliniques": [
+      "Toux productive avec expectorations purulentes",
+      "Douleur thoracique latéralisée",
+      "Râles crépitants localisés à l'auscultation",
+      "Début brutal avec frissons"
+    ],
+    "erreurs_courantes": [
+      "Confondre avec une bronchite simple",
+      "Oublier la radio thorax",
+      "Ne pas évaluer la gravité (score CRB65)",
+      "Retarder l'antibiothérapie"
+    ],
+    "traitement_attendu": [
+      {
+        "nom_medicament": "Amoxicilline",
+        "dosage": "1 g",
+        "forme": "Comprimé ou Dispersible",
+        "frequence": "Matin, Midi et Soir (toutes les 8h)",
+        "duree": "7 à 10 jours",
+        "voie": "Orale",
+        "consigne": "Respecter les horaires de prise"
+      },
+      {
+        "nom_medicament": "Paracétamol",
+        "dosage": "1 g",
+        "forme": "Comprimé",
+        "frequence": "Si fièvre > 38.5°C",
+        "duree": "3 à 5 jours",
+        "voie": "Orale",
+        "consigne": ""
+      }
+    ]
+  },
+
+  "hypertension_arterielle": {
+    "nom": "Hypertension artérielle",
+    "specialite": "Cardiologie",
+    "niveau_difficulte": "debutant",
+    "symptomes_possibles": [
+      {
+        "nom": "Céphalées",
+        "localisation": "occipitale",
+        "frequence": "matinales",
+        "description_patient": "J'ai mal derrière la tête surtout le matin au réveil"
+      },
+      {
+        "nom": "Vertiges",
+        "description_patient": "J'ai des vertiges quand je me lève brusquement"
+      },
+      {
+        "nom": "Bourdonnements d'oreille",
+        "description_patient": "J'entends des sifflements dans mes oreilles"
+      },
+      {
+        "nom": "Phosphènes",
+        "description_patient": "Je vois des petites lumières, des mouches volantes"
+      },
+      {
+        "nom": "Épistaxis",
+        "frequence": "occasionnel",
+        "description_patient": "J'ai parfois le nez qui saigne sans raison"
+      },
+      {
+        "nom": "Dyspnée d'effort",
+        "description_patient": "Je suis essoufflé quand je monte les escaliers"
+      }
+    ],
+    "examens": [
+      {
+        "nom": "Créatinine",
+        "resultat_positif": "12 mg/L",
+        "valeur_normale": "7-13 mg/L",
+        "interpretation": "Normal",
+        "anatomie": "Sang"
+      },
+      {
+        "nom": "ECG",
+        "resultat_positif": "Hypertrophie ventriculaire gauche",
+        "interpretation": "Anormal",
+        "anatomie": "Cœur"
+      },
+      {
+        "nom": "Glycémie à jeun",
+        "resultat_positif": "1.0 g/L",
+        "valeur_normale": "0.7-1.1 g/L",
+        "interpretation": "Normal",
+        "anatomie": "Sang"
+      },
+      {
+        "nom": "Bilan lipidique",
+        "resultat_positif": "Cholestérol total 2.4 g/L",
+        "valeur_normale": "<2 g/L",
+        "interpretation": "Hypercholestérolémie",
+        "anatomie": "Sang"
+      }
+    ],
+    "diagnostics_physiques": [
+      {"nom": "Tension artérielle", "resultat": "180/110 mmHg"},
+      {"nom": "Tension artérielle (contrôle)", "resultat": "175/105 mmHg"},
+      {"nom": "Fond d'œil", "resultat": "Rétinopathie hypertensive stade II"},
+      {"nom": "Auscultation cardiaque", "resultat": "B4 audible"},
+      {"nom": "IMC", "resultat": "28 kg/m² (surpoids)"}
+    ],
+    "indices_cliniques": [
+      "Céphalées matinales occipitales",
+      "TA élevée confirmée sur plusieurs mesures",
+      "Antécédents familiaux d'HTA",
+      "Surpoids et sédentarité"
+    ],
+    "erreurs_courantes": [
+      "Ne pas mesurer la TA aux deux bras",
+      "Oublier le fond d'œil",
+      "Ne pas rechercher une cause secondaire chez le sujet jeune",
+      "Traiter sur une seule mesure"
+    ],
+    "traitement_attendu": [
+      {
+        "nom_medicament": "Amlodipine",
+        "dosage": "5 mg ou 10 mg",
+        "forme": "Comprimé",
+        "frequence": "1 fois par jour (Matin)",
+        "duree": "Traitement chronique (à vie)",
+        "voie": "Orale",
+        "consigne": "Surveiller les œdèmes des chevilles"
+      },
+      {
+        "nom_medicament": "Mesures Hygiéno-Diététiques",
+        "dosage": "N/A",
+        "forme": "Action",
+        "frequence": "Quotidien",
+        "duree": "À vie",
+        "voie": "Comportemental",
+        "consigne": "Régime pauvre en sel, arrêt tabac, activité physique"
+      }
+    ]
+  },
+
+  "diabete": {
+    "nom": "Diabète",
+    "specialite": "Endocrinologie",
+    "niveau_difficulte": "debutant",
+    "symptomes_possibles": [
+      {
+        "nom": "Polyurie",
+        "frequence": "jour et nuit",
+        "description_patient": "J'urine très souvent, même la nuit je me lève 4-5 fois"
+      },
+      {
+        "nom": "Polydipsie",
+        "description_patient": "J'ai tout le temps soif, je bois beaucoup d'eau"
+      },
+      {
+        "nom": "Amaigrissement",
+        "description_patient": "J'ai perdu 8 kg en 2 mois sans faire de régime"
+      },
+      {
+        "nom": "Asthénie",
+        "degre": "modéré",
+        "description_patient": "Je suis fatigué tout le temps, je manque d'énergie"
+      },
+      {
+        "nom": "Polyphagie",
+        "description_patient": "J'ai tout le temps faim, je mange beaucoup mais je maigris"
+      },
+      {
+        "nom": "Vision floue",
+        "description_patient": "Ma vue a baissé ces derniers temps"
+      },
+      {
+        "nom": "Prurit",
+        "localisation": "génital",
+        "description_patient": "J'ai des démangeaisons au niveau des parties intimes"
+      }
+    ],
+    "examens": [
+      {
+        "nom": "Glycémie à jeun",
+        "resultat_positif": "2.5 g/L",
+        "valeur_normale": "0.7-1.1 g/L",
+        "interpretation": "Hyperglycémie",
+        "anatomie": "Sang"
+      },
+      {
+        "nom": "HbA1c",
+        "resultat_positif": "9.5%",
+        "valeur_normale": "<6.5%",
+        "interpretation": "Diabète déséquilibré",
+        "anatomie": "Sang"
+      },
+      {
+        "nom": "Bandelette urinaire",
+        "resultat_positif": "Glucose +++, Cétonurie -",
+        "interpretation": "Glycosurie",
+        "anatomie": "Urines"
+      },
+      {
+        "nom": "Créatinine",
+        "resultat_positif": "10 mg/L",
+        "valeur_normale": "7-13 mg/L",
+        "interpretation": "Normal",
+        "anatomie": "Sang"
+      }
+    ],
+    "diagnostics_physiques": [
+      {"nom": "Poids", "resultat": "Perte de 8 kg en 2 mois"},
+      {"nom": "IMC", "resultat": "32 kg/m² (obésité)"},
+      {"nom": "Examen des pieds", "resultat": "Sensibilité conservée, pas de plaie"},
+      {"nom": "Tension artérielle", "resultat": "140/85 mmHg"},
+      {"nom": "Acanthosis nigricans", "resultat": "Présent au cou"}
+    ],
+    "indices_cliniques": [
+      "Syndrome cardinal (polyurie, polydipsie, polyphagie, amaigrissement)",
+      "Antécédents familiaux de diabète",
+      "Obésité abdominale",
+      "Infections récidivantes"
+    ],
+    "erreurs_courantes": [
+      "Ne pas examiner les pieds",
+      "Oublier l'HbA1c",
+      "Ne pas rechercher les complications",
+      "Oublier l'éducation thérapeutique"
+    ],
+     "traitement_attendu": [
+      {
+        "nom_medicament": "Metformine",
+        "dosage": "500 mg ou 850 mg",
+        "forme": "Comprimé",
+        "frequence": "Au milieu des repas (Midi/Soir)",
+        "duree": "Traitement chronique",
+        "voie": "Orale",
+        "consigne": "Augmentation progressive des doses"
+      },
+      {
+        "nom_medicament": "Régime Diabétique",
+        "dosage": "N/A",
+        "forme": "Action",
+        "frequence": "Quotidien",
+        "duree": "À vie",
+        "voie": "Comportemental",
+        "consigne": "Limiter sucres rapides, favoriser légumes et fibres"
+      }
+    ]
+  },
+
+  "infection_urinaire": {
+    "nom": "Infection urinaire",
+    "specialite": "Urologie",
+    "niveau_difficulte": "debutant",
+    "symptomes_possibles": [
+      {
+        "nom": "Brûlures mictionnelles",
+        "description_patient": "Ça me brûle beaucoup quand j'urine"
+      },
+      {
+        "nom": "Pollakiurie",
+        "frequence": "très fréquente",
+        "description_patient": "J'ai envie d'uriner tout le temps, toutes les 30 minutes"
+      },
+      {
+        "nom": "Douleurs pelviennes",
+        "localisation": "sus-pubienne",
+        "description_patient": "J'ai mal en bas du ventre"
+      },
+      {
+        "nom": "Urines troubles",
+        "description_patient": "Mes urines sont troubles et sentent mauvais"
+      },
+      {
+        "nom": "Hématurie",
+        "description_patient": "J'ai vu un peu de sang dans mes urines"
+      },
+      {
+        "nom": "Ténesme vésical",
+        "description_patient": "J'ai l'impression de ne jamais finir d'uriner"
+      }
+    ],
+    "examens": [
+      {
+        "nom": "Bandelette urinaire",
+        "resultat_positif": "Leucocytes +++, Nitrites +, Sang +",
+        "interpretation": "Pathologique",
+        "anatomie": "Urines"
+      },
+      {
+        "nom": "ECBU",
+        "resultat_positif": "E. coli > 10^5 UFC/mL, Leucocytes > 10^4/mL",
+        "interpretation": "Infection urinaire confirmée",
+        "anatomie": "Urines"
+      }
+    ],
+    "diagnostics_physiques": [
+      {"nom": "Température", "resultat": "37.8°C"},
+      {"nom": "Palpation sus-pubienne", "resultat": "Sensible"},
+      {"nom": "Fosses lombaires", "resultat": "Non douloureuses (pas de pyélonéphrite)"}
+    ],
+    "indices_cliniques": [
+      "Brûlures mictionnelles typiques",
+      "Pollakiurie sans fièvre élevée",
+      "Femme jeune sexuellement active",
+      "Urines troubles"
+    ],
+    "erreurs_courantes": [
+      "Traiter sans ECBU (si récidive)",
+      "Oublier de rechercher une pyélonéphrite",
+      "Ne pas donner de conseils hygiéno-diététiques",
+      "Durée de traitement inadaptée"
+    ],
+    "traitement_attendu": [
+      {
+        "nom_medicament": "Ciprofloxacine",
+        "dosage": "500 mg",
+        "forme": "Comprimé",
+        "frequence": "Matin et Soir",
+        "duree": "3 à 5 jours (Femme) / 7 jours (Homme)",
+        "voie": "Orale",
+        "consigne": "Bien s'hydrater"
+      },
+      {
+        "nom_medicament": "Spasfon (Phloroglucinol)",
+        "dosage": "80 mg",
+        "forme": "Comprimé",
+        "frequence": "1 à 2 comprimés 3x/jour si douleur",
+        "duree": "Symptomatique",
+        "voie": "Orale",
+        "consigne": ""
+      }
+    ]
+  },
+
+  "gastro_enterite": {
+    "nom": "Gastro-entérite",
+    "specialite": "Médecine générale",
+    "niveau_difficulte": "debutant",
+    "symptomes_possibles": [
+      {
+        "nom": "Diarrhée",
+        "frequence": "5-6 selles/jour",
+        "description_patient": "J'ai la diarrhée liquide depuis hier, je vais aux toilettes tout le temps"
+      },
+      {
+        "nom": "Vomissements",
+        "frequence": "répétés",
+        "description_patient": "Je vomis tout ce que je mange ou bois"
+      },
+      {
+        "nom": "Douleurs abdominales",
+        "localisation": "diffuse",
+        "description_patient": "J'ai mal au ventre avec des crampes"
+      },
+      {
+        "nom": "Nausées",
+        "description_patient": "J'ai envie de vomir en permanence"
+      },
+      {
+        "nom": "Fièvre",
+        "degre": "modéré",
+        "description_patient": "J'ai un peu de fièvre"
+      },
+      {
+        "nom": "Fatigue",
+        "degre": "modéré",
+        "description_patient": "Je me sens très faible"
+      }
+    ],
+    "examens": [
+      {
+        "nom": "Selles KAOP",
+        "resultat_positif": "Pas de sang, pas de parasites visibles",
+        "interpretation": "Normal",
+        "anatomie": "Selles"
+      },
+      {
+        "nom": "NFS",
+        "resultat_positif": "Légère hémoconcentration",
+        "interpretation": "Déshydratation",
+        "anatomie": "Sang"
+      }
+    ],
+    "diagnostics_physiques": [
+      {"nom": "Température", "resultat": "38°C"},
+      {"nom": "Signes de déshydratation", "resultat": "Légère (pli cutané +, soif)"},
+      {"nom": "Abdomen", "resultat": "Souple, bruits hydro-aériques augmentés"},
+      {"nom": "Poids", "resultat": "Perte de 1.5 kg"}
+    ],
+    "indices_cliniques": [
+      "Contexte épidémique ou familial",
+      "Alimentation douteuse récente",
+      "Début brutal",
+      "Association diarrhée + vomissements"
+    ],
+    "erreurs_courantes": [
+      "Prescrire des antibiotiques d'emblée",
+      "Sous-estimer la déshydratation chez l'enfant",
+      "Oublier les mesures hygiéniques",
+      "Ne pas rechercher des signes de gravité"
+    ],
+     "traitement_attendu": [
+      {
+        "nom_medicament": "SRO (Sels de Réhydratation Orale)",
+        "dosage": "1 sachet dans 1L d'eau",
+        "forme": "Solution buvable",
+        "frequence": "À volonté, après chaque selle liquide",
+        "duree": "Jusqu'à arrêt des diarrhées",
+        "voie": "Orale",
+        "consigne": "Boire par petites gorgées si vomissements"
+      },
+      {
+        "nom_medicament": "Spasfon (Phloroglucinol)",
+        "dosage": "80 mg",
+        "forme": "Comprimé",
+        "frequence": "Matin, Midi, Soir si douleurs",
+        "duree": "3 jours",
+        "voie": "Orale",
+        "consigne": "Contre les spasmes abdominaux"
+      },
+      {
+        "nom_medicament": "Paracétamol",
+        "dosage": "1 g",
+        "forme": "Comprimé",
+        "frequence": "Si fièvre > 38.5°C",
+        "duree": "Ponctuel",
+        "voie": "Orale",
+        "consigne": ""
+      }
+    ]
+  }
+}

@@ -27,9 +27,12 @@ urlpatterns = [
     path('api/v1/expert/', include('module_expert.urls')),
     path('api/v1/apprenant/', include('module_apprenant.urls')),
     path('api/v1/interface/', include('module_interface.urls')),
-    
+
     # AJOUT : Route pour le Tuteur Intelligent (Chat & Logique Pédagogique)
     path('api/v1/tuteur/', include('module_tuteur.urls')),
+
+    # AJOUT : Routes pour l'extraction et export des cas cliniques
+    path('api/v1/extraction/', include('extraction.urls')),
     path('api/v1/auth/register/', RegisterView.as_view(), name='auth_register'),
     path('api/v1/auth/login/', LoginView.as_view(), name='auth_login'),
     path('api/v1/auth/logout/', LogoutView.as_view(), name='auth_logout'),

@@ -1,0 +1,139 @@
+{
+  "regions": [
+    "Littoral",
+    "Centre", 
+    "Ouest",
+    "Nord-Ouest",
+    "Sud-Ouest",
+    "Est",
+    "Adamaoua",
+    "Nord",
+    "Extrême-Nord",
+    "Sud"
+  ],
+
+  "professions_par_age": {
+    "jeune_adulte": [
+      "Étudiant(e)",
+      "Moto-taxi",
+      "Coiffeur/Coiffeuse",
+      "Apprenti(e)",
+      "Vendeur/Vendeuse",
+      "Serveur/Serveuse",
+      "Couturier/Couturière",
+      "Mécanicien",
+      "Soudeur",
+      "Informaticien(ne)",
+      "Aide-soignant(e)"
+    ],
+    "adulte": [
+      "Agriculteur/Agricultrice",
+      "Commerçant(e)",
+      "Enseignant(e)",
+      "Chauffeur de taxi",
+      "Menuisier",
+      "Maçon",
+      "Infirmier/Infirmière",
+      "Secrétaire",
+      "Comptable",
+      "Fonctionnaire",
+      "Policier",
+      "Militaire",
+      "Pasteur/Prêtre",
+      "Ménagère",
+      "Électricien",
+      "Plombier",
+      "Boucher",
+      "Pêcheur",
+      "Chauffeur de bus",
+      "Banquier",
+      "Avocat(e)",
+      "Médecin",
+      "Pharmacien(ne)"
+    ],
+    "senior": [
+      "Retraité(e)",
+      "Ancien(ne) fonctionnaire",
+      "Ancien(ne) enseignant(e)",
+      "Ancien(ne) commerçant(e)",
+      "Cultivateur/Cultivatrice"
+    ]
+  },
+
+  "qualite_eau_par_habitat": {
+    "rural": [
+      "Eau de puits",
+      "Eau de source",
+      "Eau de rivière",
+      "Eau de forage"
+    ],
+    "periurbain": [
+      "Eau du robinet (intermittente)",
+      "Eau de puits",
+      "Eau de forage",
+      "Eau achetée (bidon)"
+    ],
+    "urbain": [
+      "Eau du robinet",
+      "Eau minérale",
+      "Eau filtrée",
+      "Eau achetée (bidon)"
+    ]
+  },
+
+  "habitats": ["urbain", "périurbain", "rural"],
+
+  "groupes_sanguins": ["O+", "A+", "B+", "AB+", "O-", "A-", "B-", "AB-"],
+
+  "etats_civils": ["Célibataire", "Marié(e)", "Divorcé(e)", "Veuf/Veuve", "Union libre"],
+
+  "vaccinations_courantes": ["Fièvre jaune", "Tétanos", "Hépatite B", "COVID-19"],
+
+  "antecedents_familiaux_courants": [
+    "HTA chez le père",
+    "HTA chez la mère",
+    "Diabète chez le père",
+    "Diabète chez la mère",
+    "Drépanocytose dans la famille",
+    "Asthme chez un parent",
+    "AVC chez un parent",
+    "Aucun antécédent connu"
+  ],
+
+  "allergies_courantes": [
+    {"nom": "Pénicilline", "manifestation": "Urticaire"},
+    {"nom": "Sulfamides", "manifestation": "Éruption cutanée"},
+    {"nom": "Aspirine", "manifestation": "Asthme"},
+    {"nom": "Pollen", "manifestation": "Rhinite"},
+    {"nom": "Arachides", "manifestation": "Œdème"},
+    {"nom": "Poussière", "manifestation": "Éternuements"}
+  ],
+
+  "addictions_courantes": [
+    {"nom": "Tabac", "quantites": ["5 cigarettes/jour", "10 cigarettes/jour", "1 paquet/jour"]},
+    {"nom": "Alcool", "quantites": ["occasionnel", "2 bières/jour", "vin de palme régulier"]},
+    {"nom": "Cola (noix)", "quantites": ["occasionnel", "quotidien"]}
+  ],
+
+  "maladies_chroniques_courantes": [
+    {"nom": "HTA", "observation": "Sous traitement"},
+    {"nom": "Diabète type 2", "observation": "Sous metformine"},
+    {"nom": "Asthme", "observation": "Ventoline si besoin"},
+    {"nom": "Drépanocytose AS", "observation": "Trait drépanocytaire"},
+    {"nom": "Ulcère gastrique", "observation": "Ancien, traité"}
+  ],
+
+  "lieux_voyage_frequents": [
+    "Village (Ouest)",
+    "Village (Nord)",
+    "Village (Est)",
+    "Village (Sud)",
+    "Douala",
+    "Yaoundé",
+    "Bafoussam",
+    "Garoua",
+    "Maroua",
+    "Nigeria (commerce)",
+    "Gabon (travail)"
+  ]
+}
