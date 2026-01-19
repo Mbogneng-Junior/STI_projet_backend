@@ -10,3 +10,4 @@ adrf
 asyncpg
 django-filter
 litellm
+gunicorn

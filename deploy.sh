@@ -25,8 +25,10 @@ ssh ${SSH_USER}@${DROPLET_IP} << EOF
     echo -e "\n--- 2.1. Navigation vers le répertoire du projet (${REMOTE_PROJECT_PATH}) ---"
     cd ${REMOTE_PROJECT_PATH}
 
-    echo -e "\n--- 2.2. Récupération des dernières modifications de code ---"
-    git pull origin ${GIT_BRANCH}
+    echo -e "\n--- 2.2. Récupération des dernières modifications de code (Force Reset) ---"
+    git fetch origin
+    git reset --hard origin/${GIT_BRANCH}
+    git clean -fd
 
     echo -e "\n--- 2.3. Application des migrations (au cas où les modèles ont changé) ---"
     # C'est une bonne pratique de toujours migrer, même pour une mise à jour rapide
