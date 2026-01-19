@@ -49,6 +49,14 @@ class ProfilEtudiant(models.Model):
     est_profile = models.BooleanField(default=False) # Indique si le test de positionnement a été fait
     updated_at = models.DateTimeField(auto_now=True)
 
+    # --- SCORES GLOBAUX INITIAUX (ou Moyenne pondérée) ---
+    # Ces scores représentent le niveau général de l'étudiant, initialisé par le questionnaire
+    # et mis à jour progressivement par les interactions dans les domaines spécifiques.
+    global_anamnese = models.FloatField(default=0.0)
+    global_diagnostic = models.FloatField(default=0.0)
+    global_traitement = models.FloatField(default=0.0)
+    global_relationnel = models.FloatField(default=0.0)
+
     def __str__(self):
         return f"Profil de {self.apprenant.email} (XP: {self.xp_total})"
 

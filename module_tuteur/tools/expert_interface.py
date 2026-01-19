@@ -13,8 +13,8 @@ async def consulter_expert_medical(question: str, tool_context: ToolContext) -> 
     print(f"--- 🤝 TUTEUR: Demande d'aide à l'Expert : '{question}' ---")
     
     # On lance un runner "one-shot" juste pour cette question
-    # On ne passe pas de session_id pour ne pas interférer avec la session principale
-    runner = Runner(agent=root_agent)
+    # IMPORTANT: On réutilise le session_service du contexte actuel pour éviter l'erreur de paramètre manquant
+    runner = Runner(agent=root_agent, session_service=tool_context.session_service)
     
     domaine = tool_context.state.get("domaine", "Général")
     # On force le prompt pour activer le mode consultant

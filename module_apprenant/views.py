@@ -104,22 +104,23 @@ class QuestionProfilingViewSet(viewsets.ReadOnlyModelViewSet):
                  
             profil = apprenant.profil
             
-            # Update all domains (or default ones) with these base competencies
+            # Mise à jour du PROFIL GLOBAL avec les résultats du test de positionnement
+            profil.global_anamnese = final_scores['anamnese']
+            profil.global_diagnostic = final_scores['diagnostic']
+            profil.global_traitement = final_scores['traitement']
+            profil.global_relationnel = final_scores['relationnel']
+            profil.est_profile = True
+            profil.save()
+            
+            # (Optionnel) Initialiser les compétences par domaine à 0 ou à une valeur par défaut
+            # pour qu'ils apparaissent dans le tableau de bord, mais sans fausser les scores spécifiques.
+            # On ne met PLUS à jour les scores spécifiques ici.
             domaines = DomaineMedical.objects.all()
-                
             for domaine in domaines:
-                niveau, created = NiveauCompetence.objects.get_or_create(
+                NiveauCompetence.objects.get_or_create(
                     profil_etudiant=profil,
                     domaine=domaine
                 )
-                niveau.score_anamnese = final_scores['anamnese']
-                niveau.score_diagnostic = final_scores['diagnostic']
-                niveau.score_traitement = final_scores['traitement']
-                niveau.score_relationnel = final_scores['relationnel']
-                niveau.save()
-            
-            profil.est_profile = True
-            profil.save()
             
             return Response({
                 "status": "success", 
@@ -210,53 +211,45 @@ class StudentDashboardViewSet(viewsets.ViewSet):
         try:
             if hasattr(apprenant, 'profil'):
                 profil = apprenant.profil
-                competences = NiveauCompetence.objects.filter(profil_etudiant=profil)
                 
-                # Aggregate scores
-                if competences.exists():
-                    scores = competences.aggregate(
-                        avg_anamnese=Avg('score_anamnese'),
-                        avg_diagnostic=Avg('score_diagnostic'),
-                        avg_traitement=Avg('score_traitement'),
-                        avg_relationnel=Avg('score_relationnel'),
-                        avg_total=Avg('progression_globale')
-                    )
-                    avg_score = scores['avg_total'] or 0
-                    
-                    proficiency_data = [
+                # Utilisation des scores GLOBAUX stockés dans ProfilEtudiant
+                proficiency_data = [
+                    {
+                        "id": "communication",
+                        "label": "Communication",
+                        "value": int(profil.global_relationnel),
+                        "color": "from-green-500 to-emerald-500",
+                        "bgColor": "bg-green-50",
+                        "description": "Capacité relationnelle et empathie"
+                    },
                         {
-                            "id": "communication",
-                            "label": "Communication",
-                            "value": int(scores['avg_relationnel'] or 0),
-                            "color": "from-green-500 to-emerald-500",
-                            "bgColor": "bg-green-50",
-                            "description": "Capacité relationnelle et empathie"
-                        },
-                         {
-                            "id": "anamnese",
-                            "label": "Anamnèse", 
-                            "value": int(scores['avg_anamnese'] or 0),
-                            "color": "from-red-500 to-rose-500",
-                            "bgColor": "bg-red-50",
-                            "description": "Qualité de l'interrogatoire médical"
-                        },
+                        "id": "anamnese",
+                        "label": "Anamnèse", 
+                        "value": int(profil.global_anamnese),
+                        "color": "from-red-500 to-rose-500",
+                        "bgColor": "bg-red-50",
+                        "description": "Qualité de l'interrogatoire médical"
+                    },
+                    {
+                        "id": "diagnostic",
+                        "label": "Diagnostic",
+                        "value": int(profil.global_diagnostic),
+                        "color": "from-blue-500 to-indigo-500",
+                        "bgColor": "bg-blue-50",
+                        "description": "Pertinence des hypothèses"
+                    },
                         {
-                            "id": "diagnostic",
-                            "label": "Diagnostic",
-                            "value": int(scores['avg_diagnostic'] or 0),
-                            "color": "from-blue-500 to-indigo-500",
-                            "bgColor": "bg-blue-50",
-                            "description": "Pertinence des hypothèses"
-                        },
-                         {
-                            "id": "prise_en_charge",
-                            "label": "Prise en Charge",
-                            "value": int(scores['avg_traitement'] or 0),
-                            "color": "from-amber-500 to-orange-500",
-                            "bgColor": "bg-amber-50",
-                            "description": "Stratégie thérapeutique"
-                        }
-                    ]
+                        "id": "prise_en_charge",
+                        "label": "Prise en Charge",
+                        "value": int(profil.global_traitement),
+                        "color": "from-amber-500 to-orange-500",
+                        "bgColor": "bg-amber-50",
+                        "description": "Stratégie thérapeutique"
+                    }
+                ]
+                
+                # Calcul du score moyen basé sur les compétences globales
+                avg_score = (profil.global_anamnese + profil.global_diagnostic + profil.global_traitement + profil.global_relationnel) / 4
 
             # Fetch Difficulties from Evaluations
             evaluations = EvaluationSommative.objects.filter(session__apprenant=apprenant).order_by('-date_evaluation')
