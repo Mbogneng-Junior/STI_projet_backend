@@ -82,6 +82,8 @@ class ExpertRegisterView(APIView):
                 "email": expert.email,
                 "matricule": expert.matricule
             }, status=status.HTTP_201_CREATED)
+        # Afficher les erreurs exactes dans le terminal
+        print("❌ Erreur validation ExpertRegister:", serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class ExpertLoginView(APIView):
