@@ -27,7 +27,10 @@ SECRET_KEY = 'django-insecure-4#=x!8&@!7z!9@!8&@!7z!9@!8&@!7z!9@!8&@!7z!9@!8&@!7
 DEBUG = True
 
 ALLOWED_HOSTS = ['*']
-
+CSRF_TRUSTED_ORIGINS = [
+    'http://sti.mbognengjunior.me',
+    'https://sti-frontend-*.vercel.app' # Vos domaines Vercel
+]
 
 # Application definition
 

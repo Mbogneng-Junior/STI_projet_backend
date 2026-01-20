@@ -14,6 +14,12 @@ class RegisterSerializer(serializers.ModelSerializer):
         model = Apprenant
         fields = ('email', 'password', 'nom')
 
+    def validate_email(self, value):
+        """Vérifie que l'email n'est pas déjà utilisé par un User ou un Apprenant."""
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Cet email est déjà utilisé par un compte utilisateur existant.")
+        return value
+
     def create(self, validated_data):
         # On sépare les données de User et de Apprenant
         user_email = validated_data['email']
@@ -62,6 +68,12 @@ class ExpertRegisterSerializer(serializers.ModelSerializer):
     class Meta:
         model = ExpertHumain
         fields = ('email', 'password', 'nom', 'matricule', 'domaine_expertise_id')
+
+    def validate_email(self, value):
+        """Vérifie que l'email n'est pas déjà utilisé par un User ou un Expert."""
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("Cet email est déjà utilisé par un compte utilisateur existant.")
+        return value
 
     def create(self, validated_data):
         user_email = validated_data['email']

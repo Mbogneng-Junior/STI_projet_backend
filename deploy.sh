@@ -32,17 +32,17 @@ ssh ${SSH_USER}@${DROPLET_IP} << EOF
 
     echo -e "\n--- 2.3. Application des migrations (au cas où les modèles ont changé) ---"
     # C'est une bonne pratique de toujours migrer, même pour une mise à jour rapide
-    docker compose -f ${DOCKER_COMPOSE_FILE} exec web python manage.py migrate --noinput
+    docker compose -f docker-compose.yml exec web python manage.py migrate --noinput
 
     echo -e "\n--- 2.4. Collecte des fichiers statiques (au cas où il y a des changements) ---"
-    docker compose -f ${DOCKER_COMPOSE_FILE} exec web python manage.py collectstatic --noinput
+    docker compose -f docker-compose.yml exec web python manage.py collectstatic --noinput
 
     echo -e "\n--- 2.5. Redémarrage du service web (Gunicorn) pour recharger le code ---"
     # Seul le service 'web' est redémarré, c'est plus rapide
-    docker compose -f ${DOCKER_COMPOSE_FILE} restart web
+    docker compose -f docker-compose.yml restart web
 
     echo -e "\n--- Déploiement rapide distant terminé ! ---"
-    echo "L'application devrait être à jour. Pour voir les logs : docker compose -f ${DOCKER_COMPOSE_FILE} logs -f web"
+    echo "L'application devrait être à jour. Pour voir les logs : docker compose -f  logs -f web"
 EOF
 
 echo -e "\n=== Script de déploiement rapide local terminé ==="

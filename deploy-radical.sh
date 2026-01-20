@@ -37,19 +37,19 @@ ssh ${SSH_USER}@${DROPLET_IP} << EOF
 
     echo -e "\n--- 2.3. Arrêt et suppression des anciens conteneurs Docker ---"
     # Suppression des volumes anonymes pour nettoyer l'ancien état si nécessaire (-v)
-    docker compose -f ${DOCKER_COMPOSE_FILE} down -v || true # '|| true' car 'down' peut échouer si rien ne tourne
+    docker compose -f docker-compose.yml down -v || true # '|| true' car 'down' peut échouer si rien ne tourne
 
     echo -e "\n--- 2.4. Reconstruction et démarrage des conteneurs Docker (mode production) ---"
     # --build pour s'assurer que les dernières modifications du code et des requirements.txt sont prises en compte
     # -d pour lancer en arrière-plan
-    docker compose -f ${DOCKER_COMPOSE_FILE} up --build -d
+    docker compose -f docker-compose.yml up --build -d
 
     echo -e "\n--- 2.5. Application des migrations de base de données ---"
-    docker compose -f ${DOCKER_COMPOSE_FILE} exec web python manage.py migrate --noinput
+    docker compose -f docker-compose.yml exec web python manage.py migrate --noinput
 
     echo -e "\n--- 2.6. Collecte des fichiers statiques ---"
     # --noinput pour éviter les questions de confirmation
-    docker compose -f ${DOCKER_COMPOSE_FILE} STI_projet_backend 
+    docker compose -f docker-compose.yml STI_projet_backend 
 
     echo -e "\n--- Déploiement distant terminé ! ---"
     echo "Votre application devrait être accessible via http://${DROPLET_IP}/api/docs/"
