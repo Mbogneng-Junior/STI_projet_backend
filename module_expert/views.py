@@ -27,6 +27,7 @@ class DomaineMedicalViewSet(viewsets.ModelViewSet):
 class ExpertHumainViewSet(viewsets.ModelViewSet):
     queryset = ExpertHumain.objects.all()
     serializer_class = ExpertHumainSerializer
+    permission_classes = [AllowAny]
 
 @extend_schema(tags=['Expert - Experts IA'])
 class ExpertIAViewSet(viewsets.ModelViewSet):

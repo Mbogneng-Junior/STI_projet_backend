@@ -10,7 +10,7 @@ from .views import (
 
 router = DefaultRouter()
 router.register(r'domaines', DomaineMedicalViewSet)
-router.register(r'experts-humains', ExpertHumainViewSet)
+router.register(r'experts', ExpertHumainViewSet)
 router.register(r'experts-ia', ExpertIAViewSet)
 router.register(r'cas-cliniques', CasCliniqueViewSet)
 router.register(r'etapes-cliniques', EtapeCliniqueViewSet)
